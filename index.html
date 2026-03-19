@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Registrar Venta</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold: #B8860B;
+  --gold-light: #F5E6B8;
+  --ink: #1A1510;
+  --ink-mid: #4A3F35;
+  --ink-soft: #8C7D6E;
+  --ink-faint: #E8E0D5;
+  --surface: #FDFAF2;
+  --green: #2D6A4F;
+  --green-light: #D8F3DC;
+  --red: #9B2335;
+  --red-light: #FDECEA;
+  --white: #FFFFFF;
+  --radius: 12px;
+  --radius-sm: 8px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'DM Sans', sans-serif; background: var(--ink); min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 0; }
+
+.header { width: 100%; background: var(--ink); padding: 20px 24px 16px; text-align: center; border-bottom: 0.5px solid rgba(184,134,11,0.3); }
+.logo { font-family: 'Cormorant Garamond', serif; font-size: 22px; color: var(--gold-light); letter-spacing: 3px; font-weight: 600; }
+.header-sub { font-size: 11px; color: var(--ink-soft); margin-top: 3px; letter-spacing: 1px; text-transform: uppercase; }
+
+.container { width: 100%; max-width: 480px; padding: 24px 20px; }
+
+/* SCAN CARD */
+.scan-card { background: var(--white); border-radius: var(--radius); padding: 28px 24px; margin-bottom: 16px; }
+.scan-label { font-size: 12px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+.scan-input { width: 100%; padding: 16px; border: 1.5px solid var(--ink-faint); border-radius: var(--radius-sm); font-size: 22px; font-family: 'Cormorant Garamond', serif; font-weight: 600; letter-spacing: 4px; text-align: center; color: var(--ink); background: var(--surface); transition: border-color .2s; }
+.scan-input:focus { outline: none; border-color: var(--gold); }
+.scan-hint { font-size: 11px; color: var(--ink-soft); text-align: center; margin-top: 8px; }
+
+/* PREVIEW */
+.preview-card { background: var(--white); border-radius: var(--radius); padding: 24px; margin-bottom: 16px; display: none; }
+.preview-nombre { font-family: 'Cormorant Garamond', serif; font-size: 20px; font-weight: 600; color: var(--ink); margin-bottom: 4px; }
+.preview-tipo { font-size: 12px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; }
+.preview-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 0.5px solid var(--ink-faint); font-size: 14px; }
+.preview-row:last-of-type { border-bottom: none; }
+.preview-row-label { color: var(--ink-soft); }
+.preview-row-value { font-weight: 500; color: var(--ink); }
+.precio-venta { font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 600; color: var(--ink); }
+.confirm-btn { width: 100%; margin-top: 20px; padding: 16px; background: var(--ink); color: var(--white); border: none; border-radius: var(--radius-sm); font-size: 16px; font-family: 'Cormorant Garamond', serif; font-weight: 600; letter-spacing: 1px; cursor: pointer; transition: all .15s; }
+.confirm-btn:hover { background: var(--ink-mid); }
+.confirm-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+/* RESULTADO */
+.resultado-ok { background: var(--green-light); border: 0.5px solid #95D5B2; border-radius: var(--radius); padding: 24px; margin-bottom: 16px; text-align: center; display: none; }
+.resultado-icon { font-size: 36px; margin-bottom: 12px; }
+.resultado-titulo { font-family: 'Cormorant Garamond', serif; font-size: 20px; font-weight: 600; color: var(--green); margin-bottom: 8px; }
+.resultado-detalle { font-size: 13px; color: var(--green); opacity: .85; line-height: 1.6; }
+.nueva-btn { width: 100%; margin-top: 16px; padding: 14px; background: var(--green); color: var(--white); border: none; border-radius: var(--radius-sm); font-size: 14px; font-family: 'DM Sans', sans-serif; cursor: pointer; }
+
+/* ERROR */
+.error-box { background: var(--red-light); border: 0.5px solid #F5C2C7; border-radius: var(--radius-sm); padding: 12px 16px; font-size: 13px; color: var(--red); margin-top: 10px; display: none; text-align: center; }
+
+/* HISTORIAL */
+.historial-card { background: rgba(255,255,255,0.06); border: 0.5px solid rgba(255,255,255,0.1); border-radius: var(--radius); padding: 20px; }
+.historial-title { font-size: 11px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 14px; }
+.hist-item { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 0.5px solid rgba(255,255,255,0.07); font-size: 13px; }
+.hist-item:last-child { border-bottom: none; }
+.hist-codigo { font-family: monospace; font-size: 12px; color: var(--gold-light); }
+.hist-nombre { color: rgba(255,255,255,0.7); font-size: 12px; }
+.hist-precio { color: var(--gold-light); font-weight: 500; }
+.hist-empty { font-size: 12px; color: var(--ink-soft); text-align: center; padding: 8px 0; }
+
+/* SPINNER */
+.spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: var(--white); border-radius: 50%; animation: spin .7s linear infinite; vertical-align: middle; margin-right: 6px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">JOYERÍA</div>
+  <div class="header-sub">Registro de ventas</div>
+</div>
+
+<div class="container">
+
+  <!-- ESCANEAR -->
+  <div class="scan-card" id="scan-section">
+    <div class="scan-label">Código de la joya</div>
+    <input class="scan-input" id="codigo-input" type="text" placeholder="JOY-0001" autocomplete="off" autocorrect="off" spellcheck="false" oninput="buscarJoya()" autofocus>
+    <div class="scan-hint">Escribe o escanea el código de la etiqueta</div>
+    <div class="error-box" id="error-box"></div>
+  </div>
+
+  <!-- PREVIEW JOYA -->
+  <div class="preview-card" id="preview-card">
+    <div class="preview-nombre" id="p-nombre"></div>
+    <div class="preview-tipo" id="p-tipo"></div>
+    <div class="preview-row">
+      <span class="preview-row-label">Código</span>
+      <span class="preview-row-value" id="p-codigo" style="font-family:monospace;font-size:13px;"></span>
+    </div>
+    <div class="preview-row">
+      <span class="preview-row-label">Precio de venta</span>
+      <span class="precio-venta" id="p-precio"></span>
+    </div>
+    <div class="preview-row">
+      <span class="preview-row-label">Material</span>
+      <span class="preview-row-value" id="p-material"></span>
+    </div>
+    <div class="preview-row">
+      <span class="preview-row-label">Estado</span>
+      <span class="preview-row-value" id="p-estado"></span>
+    </div>
+    <button class="confirm-btn" id="confirm-btn" onclick="confirmarVenta()">Confirmar venta</button>
+  </div>
+
+  <!-- RESULTADO OK -->
+  <div class="resultado-ok" id="resultado-ok">
+    <div class="resultado-icon">✓</div>
+    <div class="resultado-titulo">Venta registrada</div>
+    <div class="resultado-detalle" id="resultado-detalle"></div>
+    <button class="nueva-btn" onclick="nuevaVenta()">Registrar otra venta</button>
+  </div>
+
+  <!-- HISTORIAL -->
+  <div class="historial-card">
+    <div class="historial-title">Ventas de hoy</div>
+    <div id="historial-list"><div class="hist-empty">Sin ventas registradas hoy</div></div>
+  </div>
+
+</div>
+
+<script>
+const API = 'https://script.google.com/macros/s/AKfycbyEPZ4Q2tczGhhQ6BsvVsSkf9Zmni5OkDR-ul_vNsSuKFLXN0JCMoyKPbJoJEFQkg/exec';
+
+let inventario = [];
+let joyas_hoy = [];
+let joyaActual = null;
+let buscando = false;
+let timer = null;
+
+async function cargarInventario() {
+  try {
+    const res = await fetch(API + '?action=getInventario');
+    const r = await res.json();
+    if (r.ok) inventario = r.data || [];
+  } catch(e) { console.log('Sin conexión inicial'); }
+}
+
+function buscarJoya() {
+  clearTimeout(timer);
+  const cod = document.getElementById('codigo-input').value.trim().toUpperCase();
+  ocultarError();
+  ocultarPreview();
+  if (cod.length < 4) return;
+  timer = setTimeout(() => resolverBusqueda(cod), 300);
+}
+
+function resolverBusqueda(cod) {
+  // Buscar en inventario cargado
+  let joya = inventario.find(j => String(j.codigo).toUpperCase() === cod);
+
+  if (!joya) {
+    mostrarError('Código no encontrado. Verifica la etiqueta.');
+    return;
+  }
+  if (joya.estado === 'vendida') {
+    mostrarError('Esta joya ya fue vendida el ' + (joya.fechaVenta || '—'));
+    return;
+  }
+  joyaActual = joya;
+  mostrarPreview(joya);
+}
+
+function mostrarPreview(j) {
+  document.getElementById('p-nombre').textContent = j.nombre || '—';
+  document.getElementById('p-tipo').textContent = (j.tipo || '') + (j.material ? ' · ' + j.material : '');
+  document.getElementById('p-codigo').textContent = j.codigo;
+  document.getElementById('p-precio').textContent = '$' + Number(j.venta).toLocaleString('es-CL');
+  document.getElementById('p-material').textContent = j.material || '—';
+  document.getElementById('p-estado').textContent = 'Disponible para venta';
+  document.getElementById('p-estado').style.color = 'var(--green)';
+  document.getElementById('preview-card').style.display = 'block';
+  document.getElementById('confirm-btn').disabled = false;
+  document.getElementById('confirm-btn').textContent = 'Confirmar venta';
+}
+
+function ocultarPreview() {
+  document.getElementById('preview-card').style.display = 'none';
+  joyaActual = null;
+}
+
+function mostrarError(msg) {
+  const el = document.getElementById('error-box');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+function ocultarError() {
+  document.getElementById('error-box').style.display = 'none';
+}
+
+async function confirmarVenta() {
+  if (!joyaActual) return;
+  const btn = document.getElementById('confirm-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Registrando…';
+
+  try {
+    const res = await fetch(API, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'venderJoya', codigo: joyaActual.codigo, registradoPor: 'joyeria' })
+    });
+    const r = await res.json();
+
+    if (r.ok) {
+      // Actualizar inventario local
+      const idx = inventario.findIndex(j=>j.codigo===joyaActual.codigo);
+      if (idx>=0) { inventario[idx].estado='vendida'; inventario[idx].fechaVenta=new Date().toISOString().split('T')[0]; }
+
+      // Historial
+      joyas_hoy.unshift({ codigo: joyaActual.codigo, nombre: joyaActual.nombre, precio: joyaActual.venta });
+      renderHistorial();
+
+      // Resultado
+      document.getElementById('scan-section').style.display = 'none';
+      document.getElementById('preview-card').style.display = 'none';
+      document.getElementById('resultado-detalle').innerHTML = `<strong>${joyaActual.codigo}</strong> — ${joyaActual.nombre}<br>Precio: $${Number(joyaActual.venta).toLocaleString('es-CL')}`;
+      document.getElementById('resultado-ok').style.display = 'block';
+      joyaActual = null;
+    } else {
+      btn.disabled = false;
+      btn.textContent = 'Confirmar venta';
+      mostrarError(r.msg || 'Error al registrar la venta');
+    }
+  } catch(e) {
+    btn.disabled = false;
+    btn.textContent = 'Confirmar venta';
+    mostrarError('Sin conexión. Intenta de nuevo.');
+  }
+}
+
+function nuevaVenta() {
+  document.getElementById('resultado-ok').style.display = 'none';
+  document.getElementById('scan-section').style.display = 'block';
+  document.getElementById('codigo-input').value = '';
+  document.getElementById('codigo-input').focus();
+  ocultarError();
+  ocultarPreview();
+}
+
+function renderHistorial() {
+  const el = document.getElementById('historial-list');
+  if (!joyas_hoy.length) { el.innerHTML = '<div class="hist-empty">Sin ventas registradas hoy</div>'; return; }
+  el.innerHTML = joyas_hoy.slice(0,8).map(j=>`
+    <div class="hist-item">
+      <div>
+        <div class="hist-codigo">${j.codigo}</div>
+        <div class="hist-nombre">${j.nombre}</div>
+      </div>
+      <div class="hist-precio">$${Number(j.precio).toLocaleString('es-CL')}</div>
+    </div>`).join('');
+}
+
+// Init
+cargarInventario();
+</script>
+</body>
+</html>
