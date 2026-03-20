@@ -11,107 +11,102 @@
   --gold-light: #F5E6B8;
   --gold-pale: #FDFAF2;
   --ink: #1A1510;
-  --ink-mid: #4A3F35;
   --ink-soft: #8C7D6E;
   --ink-faint: #E8E0D5;
-  --surface: #FDFAF2;
   --green: #2D6A4F;
   --green-light: #D8F3DC;
   --red: #9B2335;
-  --red-light: #FDECEA;
   --white: #FFFFFF;
-  --radius: 14px;
-  --radius-sm: 9px;
+  --surface: #FDFAF2;
+  --r: 14px; --rs: 9px;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 html, body { height: 100%; }
 body { font-family: 'DM Sans', sans-serif; background: var(--ink); color: var(--white); min-height: 100vh; display: flex; flex-direction: column; }
 
-.header { padding: 18px 20px 14px; text-align: center; border-bottom: 0.5px solid rgba(184,134,11,0.25); flex-shrink: 0; }
+.header { padding: 18px 20px 14px; text-align: center; border-bottom: 0.5px solid rgba(184,134,11,0.25); }
 .logo { font-family: 'Cormorant Garamond', serif; font-size: 21px; color: var(--gold-light); letter-spacing: 3px; font-weight: 600; }
 .header-sub { font-size: 11px; color: var(--ink-soft); margin-top: 2px; letter-spacing: 1px; text-transform: uppercase; }
 
 .scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
 .container { max-width: 480px; margin: 0 auto; padding: 20px 16px 40px; }
 
-.status-bar { display: flex; align-items: center; gap: 6px; padding: 8px 12px; border-radius: var(--radius-sm); margin-bottom: 16px; font-size: 12px; }
-.status-bar.loading { background: rgba(255,255,255,0.07); color: var(--ink-soft); }
-.status-bar.ok { background: rgba(45,106,79,0.2); color: #95D5B2; }
-.status-bar.error { background: rgba(155,35,53,0.2); color: #F5C2C7; }
-.status-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-.status-dot.green { background: #52B788; }
-.status-dot.red { background: var(--red); }
-.status-dot.pulse { background: var(--gold); animation: pulse 1.5s ease-in-out infinite; }
-@keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+/* STATUS */
+.status { display: flex; align-items: center; gap: 7px; padding: 9px 13px; border-radius: var(--rs); margin-bottom: 16px; font-size: 12px; background: rgba(255,255,255,0.07); color: var(--ink-soft); }
+.status.ok { background: rgba(45,106,79,0.22); color: #95D5B2; }
+.status.err { background: rgba(155,35,53,0.22); color: #F5C2C7; }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--gold); flex-shrink: 0; }
+.dot.g { background: #52B788; animation: none; }
+.dot.r { background: var(--red); animation: none; }
+.dot.p { animation: pulse 1.4s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
 
+/* PANTALLAS — solo una visible a la vez */
+.screen { display: none; }
+.screen.active { display: block; }
+
+/* PANTALLA: ESCANEAR */
 .mode-toggle { display: flex; background: rgba(255,255,255,0.07); border-radius: 10px; padding: 3px; margin-bottom: 16px; }
-.mode-btn { flex: 1; padding: 10px 8px; border: none; background: transparent; color: rgba(255,255,255,0.45); font-size: 13px; font-family: 'DM Sans', sans-serif; cursor: pointer; border-radius: 8px; transition: all .2s; display: flex; align-items: center; justify-content: center; gap: 6px; }
-.mode-btn.active { background: var(--gold); color: var(--ink); font-weight: 500; }
+.mbtn { flex: 1; padding: 10px 8px; border: none; background: transparent; color: rgba(255,255,255,0.45); font-size: 13px; font-family: 'DM Sans', sans-serif; cursor: pointer; border-radius: 8px; transition: all .2s; }
+.mbtn.on { background: var(--gold); color: var(--ink); font-weight: 500; }
 
-/* SCANNER */
-.scanner-wrap { position: relative; border-radius: var(--radius); overflow: hidden; background: #000; margin-bottom: 10px; aspect-ratio: 1; width: 100%; display: none; }
-.scanner-wrap.show { display: block; }
-#qr-video { width: 100%; height: 100%; object-fit: cover; display: block; }
-.scanner-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; }
-.scan-frame { width: 62%; aspect-ratio: 1; position: relative; }
-.scan-frame::before { content: ''; position: absolute; inset: 0; box-shadow: 0 0 0 1000px rgba(0,0,0,0.5); border-radius: 2px; }
-.scan-border { position: absolute; inset: 0; border: 2px solid var(--gold); border-radius: 10px; }
-.scan-corner { position: absolute; width: 22px; height: 22px; border-color: var(--gold-light); border-style: solid; }
-.scan-corner.tl { top: -2px; left: -2px; border-width: 3px 0 0 3px; border-radius: 6px 0 0 0; }
-.scan-corner.tr { top: -2px; right: -2px; border-width: 3px 3px 0 0; border-radius: 0 6px 0 0; }
-.scan-corner.bl { bottom: -2px; left: -2px; border-width: 0 0 3px 3px; border-radius: 0 0 0 6px; }
-.scan-corner.br { bottom: -2px; right: -2px; border-width: 0 3px 3px 0; border-radius: 0 0 6px 0; }
-.scan-line { position: absolute; left: 8%; right: 8%; height: 2px; background: linear-gradient(90deg, transparent, var(--gold-light), transparent); animation: scanline 2.2s ease-in-out infinite; top: 10%; }
-@keyframes scanline { 0%,100%{top:10%;opacity:.7;} 50%{top:84%;opacity:1;} }
-.scanner-hint { text-align: center; font-size: 12px; color: var(--ink-soft); margin-bottom: 14px; }
+.cam-box { position: relative; border-radius: var(--r); overflow: hidden; background: #000; margin-bottom: 10px; aspect-ratio: 1; width: 100%; }
+#vid { width: 100%; height: 100%; object-fit: cover; display: block; }
+.overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; }
+.frame { width: 62%; aspect-ratio: 1; position: relative; border: 2px solid var(--gold); border-radius: 10px; box-shadow: 0 0 0 1000px rgba(0,0,0,0.5); }
+.c { position: absolute; width: 22px; height: 22px; border-color: var(--gold-light); border-style: solid; }
+.c.tl { top:-2px; left:-2px; border-width:3px 0 0 3px; border-radius:6px 0 0 0; }
+.c.tr { top:-2px; right:-2px; border-width:3px 3px 0 0; border-radius:0 6px 0 0; }
+.c.bl { bottom:-2px; left:-2px; border-width:0 0 3px 3px; border-radius:0 0 0 6px; }
+.c.br { bottom:-2px; right:-2px; border-width:0 3px 3px 0; border-radius:0 0 6px 0; }
+.scanline { position: absolute; left:8%; right:8%; height:2px; background: linear-gradient(90deg,transparent,var(--gold-light),transparent); animation: sl 2.2s ease-in-out infinite; }
+@keyframes sl { 0%,100%{top:10%;opacity:.7} 50%{top:84%;opacity:1} }
+.cam-hint { text-align: center; font-size: 12px; color: var(--ink-soft); margin-bottom: 14px; }
+.cam-err { background: rgba(155,35,53,0.18); border: 0.5px solid rgba(155,35,53,0.4); border-radius: var(--rs); padding: 12px 16px; font-size: 13px; color: #F5C2C7; margin-bottom: 14px; display: none; text-align: center; }
 
-.cam-error { background: rgba(155,35,53,0.18); border: 0.5px solid rgba(155,35,53,0.4); border-radius: var(--radius-sm); padding: 12px 16px; text-align: center; font-size: 13px; color: #F5C2C7; display: none; margin-bottom: 14px; }
+.manual-box { margin-bottom: 14px; }
+.mlabel { font-size: 11px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+.minput { width: 100%; padding: 16px; border: 1.5px solid rgba(255,255,255,0.15); border-radius: var(--rs); font-size: 24px; font-family: 'Cormorant Garamond', serif; font-weight: 600; letter-spacing: 4px; text-align: center; color: var(--white); background: rgba(255,255,255,0.07); text-transform: uppercase; }
+.minput:focus { outline: none; border-color: var(--gold); }
+.minput::placeholder { color: rgba(255,255,255,0.18); letter-spacing: 2px; font-size: 18px; }
+.mbuscar { width: 100%; margin-top: 10px; padding: 14px; background: var(--gold); color: var(--ink); border: none; border-radius: var(--rs); font-size: 15px; font-family: 'DM Sans', sans-serif; font-weight: 500; cursor: pointer; }
 
-/* MANUAL */
-.manual-wrap { display: none; margin-bottom: 14px; }
-.manual-wrap.show { display: block; }
-.input-label { font-size: 11px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
-.manual-input { width: 100%; padding: 16px; border: 1.5px solid rgba(255,255,255,0.15); border-radius: var(--radius-sm); font-size: 24px; font-family: 'Cormorant Garamond', serif; font-weight: 600; letter-spacing: 4px; text-align: center; color: var(--white); background: rgba(255,255,255,0.07); transition: border-color .2s; text-transform: uppercase; }
-.manual-input:focus { outline: none; border-color: var(--gold); background: rgba(255,255,255,0.1); }
-.manual-input::placeholder { color: rgba(255,255,255,0.18); letter-spacing: 2px; font-size: 18px; }
-.buscar-btn { width: 100%; margin-top: 10px; padding: 14px; background: var(--gold); color: var(--ink); border: none; border-radius: var(--radius-sm); font-size: 15px; font-family: 'DM Sans', sans-serif; font-weight: 500; cursor: pointer; }
-.buscar-btn:active { opacity: .82; }
+/* PANTALLA: PREVIEW */
+.preview { background: var(--white); border-radius: var(--r); padding: 24px 20px; margin-bottom: 14px; }
+.ptag { display: inline-block; font-family: monospace; font-size: 11px; background: var(--gold-pale); color: var(--ink-soft); border: 0.5px solid var(--ink-faint); border-radius: 4px; padding: 2px 9px; margin-bottom: 10px; }
+.pnom { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 600; color: var(--ink); margin-bottom: 2px; }
+.psub { font-size: 12px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 18px; }
+.pprice-row { display: flex; align-items: baseline; gap: 10px; padding-bottom: 16px; border-bottom: 0.5px solid var(--ink-faint); margin-bottom: 14px; }
+.pplabel { font-size: 12px; color: var(--ink-soft); }
+.pprice { font-family: 'Cormorant Garamond', serif; font-size: 36px; font-weight: 600; color: var(--ink); }
+.prow { display: flex; justify-content: space-between; font-size: 13px; padding: 8px 0; border-bottom: 0.5px solid var(--ink-faint); }
+.prow:last-of-type { border-bottom: none; }
+.prowl { color: var(--ink-soft); }
+.prowr { color: var(--ink); font-weight: 500; }
+.cbtn { width: 100%; margin-top: 20px; padding: 18px; background: var(--ink); color: var(--white); border: none; border-radius: var(--rs); font-size: 17px; font-family: 'Cormorant Garamond', serif; font-weight: 600; letter-spacing: 1px; cursor: pointer; }
+.cbtn:active { opacity: .82; }
+.cbtn:disabled { opacity: .4; }
+.canclink { display: block; text-align: center; margin-top: 14px; font-size: 13px; color: var(--ink-soft); cursor: pointer; }
 
-.error-box { background: rgba(155,35,53,0.18); border: 0.5px solid rgba(155,35,53,0.5); border-radius: var(--radius-sm); padding: 12px 16px; font-size: 13px; color: #F5C2C7; margin-bottom: 14px; text-align: center; display: none; }
+/* PANTALLA: RESULTADO */
+.result { background: var(--green-light); border-radius: var(--r); padding: 32px 24px; text-align: center; margin-bottom: 14px; }
+.ricon { width: 58px; height: 58px; background: var(--green); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 28px; color: #fff; }
+.rtit { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 600; color: var(--green); margin-bottom: 8px; }
+.rdet { font-size: 13px; color: var(--green); opacity: .85; line-height: 1.7; }
+.rnueva { width: 100%; margin-top: 20px; padding: 16px; background: var(--green); color: #fff; border: none; border-radius: var(--rs); font-size: 15px; font-family: 'DM Sans', sans-serif; cursor: pointer; }
 
-/* PREVIEW */
-.preview-card { background: var(--white); border-radius: var(--radius); padding: 22px 20px; margin-bottom: 14px; display: none; }
-.p-tag { display: inline-block; font-family: monospace; font-size: 11px; background: var(--gold-pale); color: var(--ink-soft); border: 0.5px solid var(--ink-faint); border-radius: 4px; padding: 2px 9px; margin-bottom: 10px; }
-.p-nombre { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 600; color: var(--ink); margin-bottom: 2px; }
-.p-subtipo { font-size: 12px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 18px; }
-.p-price-row { display: flex; align-items: baseline; gap: 10px; padding-bottom: 16px; border-bottom: 0.5px solid var(--ink-faint); margin-bottom: 14px; }
-.p-price-label { font-size: 12px; color: var(--ink-soft); }
-.p-price { font-family: 'Cormorant Garamond', serif; font-size: 36px; font-weight: 600; color: var(--ink); }
-.p-detail { display: flex; justify-content: space-between; font-size: 13px; padding: 8px 0; border-bottom: 0.5px solid var(--ink-faint); }
-.p-detail:last-of-type { border-bottom: none; }
-.p-dlabel { color: var(--ink-soft); }
-.p-dvalue { color: var(--ink); font-weight: 500; }
-.confirm-btn { width: 100%; margin-top: 20px; padding: 18px; background: var(--ink); color: var(--white); border: none; border-radius: var(--radius-sm); font-size: 17px; font-family: 'Cormorant Garamond', serif; font-weight: 600; letter-spacing: 1px; cursor: pointer; }
-.confirm-btn:active { opacity: .82; }
-.confirm-btn:disabled { opacity: .4; }
-.cancel-link { display: block; text-align: center; margin-top: 14px; font-size: 13px; color: var(--ink-soft); cursor: pointer; }
-
-/* RESULTADO */
-.resultado-ok { background: var(--green-light); border-radius: var(--radius); padding: 32px 24px; margin-bottom: 16px; text-align: center; display: none; }
-.ok-icon { width: 58px; height: 58px; background: var(--green); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 28px; color: #fff; }
-.ok-titulo { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 600; color: var(--green); margin-bottom: 8px; }
-.ok-detalle { font-size: 13px; color: var(--green); opacity: .85; line-height: 1.7; }
-.nueva-btn { width: 100%; margin-top: 20px; padding: 16px; background: var(--green); color: #fff; border: none; border-radius: var(--radius-sm); font-size: 15px; font-family: 'DM Sans', sans-serif; cursor: pointer; }
+/* ERROR FLOTANTE */
+.errbox { background: rgba(155,35,53,0.2); border: 0.5px solid rgba(155,35,53,0.5); border-radius: var(--rs); padding: 12px 16px; font-size: 13px; color: #F5C2C7; margin-bottom: 14px; text-align: center; display: none; }
 
 /* HISTORIAL */
-.hist-title { font-size: 11px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; margin-top: 6px; }
-.hist-item { display: flex; justify-content: space-between; align-items: center; padding: 11px 14px; background: rgba(255,255,255,0.05); border-radius: var(--radius-sm); margin-bottom: 8px; }
-.hist-left { display: flex; flex-direction: column; gap: 2px; }
-.hist-codigo { font-family: monospace; font-size: 11px; color: var(--gold-light); }
-.hist-nombre { font-size: 13px; color: rgba(255,255,255,0.8); }
-.hist-hora { font-size: 11px; color: var(--ink-soft); }
-.hist-precio { font-size: 15px; color: var(--gold-light); font-weight: 500; }
-.hist-empty { font-size: 13px; color: var(--ink-soft); text-align: center; padding: 10px 0; }
+.htit { font-size: 11px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; margin-top: 4px; }
+.hitem { display: flex; justify-content: space-between; align-items: center; padding: 11px 14px; background: rgba(255,255,255,0.05); border-radius: var(--rs); margin-bottom: 8px; }
+.hleft { display: flex; flex-direction: column; gap: 2px; }
+.hcod { font-family: monospace; font-size: 11px; color: var(--gold-light); }
+.hnom { font-size: 13px; color: rgba(255,255,255,0.8); }
+.hhora { font-size: 11px; color: var(--ink-soft); }
+.hprecio { font-size: 15px; color: var(--gold-light); font-weight: 500; }
+.hempty { font-size: 13px; color: var(--ink-soft); text-align: center; padding: 10px 0; }
 
 .spinner { display: inline-block; width: 17px; height: 17px; border: 2px solid rgba(0,0,0,0.15); border-top-color: var(--ink); border-radius: 50%; animation: spin .7s linear infinite; vertical-align: middle; margin-right: 6px; }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -124,67 +119,70 @@ body { font-family: 'DM Sans', sans-serif; background: var(--ink); color: var(--
   <div class="header-sub">Registro de ventas</div>
 </div>
 
-<div class="scroll">
+<div class="scroll" id="scroll">
 <div class="container">
 
-  <div class="status-bar loading" id="status-bar">
-    <div class="status-dot pulse"></div>
-    <span id="status-txt">Conectando con inventario…</span>
-  </div>
+  <div class="status" id="stbar"><div class="dot p" id="stdot"></div><span id="stmsg">Conectando con inventario…</span></div>
+  <div class="errbox" id="errbox"></div>
 
-  <div class="mode-toggle" id="mode-toggle">
-    <button class="mode-btn active" id="btn-camara" onclick="setModo('camara')">📷 Escanear QR</button>
-    <button class="mode-btn" id="btn-manual" onclick="setModo('manual')">✏️ Ingresar código</button>
-  </div>
+  <!-- ── PANTALLA ESCANEAR ── -->
+  <div class="screen active" id="scr-scan">
+    <div class="mode-toggle">
+      <button class="mbtn on" id="btn-cam" onclick="setModo('cam')">📷 Escanear QR</button>
+      <button class="mbtn" id="btn-man" onclick="setModo('man')">✏️ Ingresar código</button>
+    </div>
 
-  <div class="scanner-wrap show" id="scanner-wrap">
-    <video id="qr-video" playsinline muted></video>
-    <div class="scanner-overlay">
-      <div class="scan-frame">
-        <div class="scan-border"></div>
-        <div class="scan-corner tl"></div>
-        <div class="scan-corner tr"></div>
-        <div class="scan-corner bl"></div>
-        <div class="scan-corner br"></div>
-        <div class="scan-line"></div>
+    <div class="cam-box" id="cam-box">
+      <video id="vid" playsinline muted></video>
+      <div class="overlay">
+        <div class="frame">
+          <div class="c tl"></div><div class="c tr"></div>
+          <div class="c bl"></div><div class="c br"></div>
+          <div class="scanline"></div>
+        </div>
       </div>
     </div>
-  </div>
-  <div class="scanner-hint" id="scan-hint">Apunta la cámara al código de la etiqueta</div>
-  <div class="cam-error" id="cam-error">No se pudo acceder a la cámara.<br><span style="font-size:12px;opacity:.8;">Usa "Ingresar código" o verifica permisos.</span></div>
+    <div class="cam-hint" id="cam-hint">Apunta la cámara al código de la etiqueta</div>
+    <div class="cam-err" id="cam-err">No se pudo acceder a la cámara.<br><span style="font-size:12px;opacity:.8;">Usa "Ingresar código" o verifica permisos.</span></div>
 
-  <div class="manual-wrap" id="manual-wrap">
-    <div class="input-label">Código de la joya</div>
-    <input class="manual-input" id="cod-input" type="text" placeholder="JOY-0001"
-      autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
-    <button class="buscar-btn" onclick="buscarManual()">Buscar joya →</button>
-  </div>
-
-  <div class="error-box" id="error-box"></div>
-
-  <div class="preview-card" id="preview-card">
-    <div class="p-tag" id="p-cod"></div>
-    <div class="p-nombre" id="p-nom"></div>
-    <div class="p-subtipo" id="p-sub"></div>
-    <div class="p-price-row">
-      <span class="p-price-label">Precio de venta</span>
-      <span class="p-price" id="p-prec"></span>
+    <div class="manual-box" id="man-box" style="display:none;">
+      <div class="mlabel">Código de la joya</div>
+      <input class="minput" id="codinput" type="text" placeholder="JOY-0001"
+        autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
+      <button class="mbuscar" onclick="buscarManual()">Buscar joya →</button>
     </div>
-    <div class="p-detail"><span class="p-dlabel">Material</span><span class="p-dvalue" id="p-mat"></span></div>
-    <div class="p-detail"><span class="p-dlabel">Estado</span><span class="p-dvalue" id="p-est" style="color:var(--green);"></span></div>
-    <button class="confirm-btn" id="confirm-btn" onclick="confirmarVenta()">Confirmar venta</button>
-    <span class="cancel-link" onclick="cancelar()">Cancelar</span>
   </div>
 
-  <div class="resultado-ok" id="resultado-ok">
-    <div class="ok-icon">✓</div>
-    <div class="ok-titulo">Venta registrada</div>
-    <div class="ok-detalle" id="ok-det"></div>
-    <button class="nueva-btn" onclick="nuevaVenta()">Registrar otra venta</button>
+  <!-- ── PANTALLA PREVIEW ── -->
+  <div class="screen" id="scr-preview">
+    <div class="preview">
+      <div class="ptag" id="p-cod"></div>
+      <div class="pnom" id="p-nom"></div>
+      <div class="psub" id="p-sub"></div>
+      <div class="pprice-row">
+        <span class="pplabel">Precio de venta</span>
+        <span class="pprice" id="p-prec"></span>
+      </div>
+      <div class="prow"><span class="prowl">Material</span><span class="prowr" id="p-mat"></span></div>
+      <div class="prow"><span class="prowl">Estado</span><span class="prowr" style="color:var(--green);">Disponible para venta</span></div>
+      <button class="cbtn" id="cbtn" onclick="confirmarVenta()">Confirmar venta</button>
+      <span class="canclink" onclick="irAEscanear()">Cancelar</span>
+    </div>
   </div>
 
-  <div class="hist-title">Ventas de hoy</div>
-  <div id="hist-list"><div class="hist-empty">Sin ventas registradas hoy</div></div>
+  <!-- ── PANTALLA RESULTADO ── -->
+  <div class="screen" id="scr-result">
+    <div class="result">
+      <div class="ricon">✓</div>
+      <div class="rtit">Venta registrada</div>
+      <div class="rdet" id="rdet"></div>
+      <button class="rnueva" onclick="irAEscanear()">Registrar otra venta</button>
+    </div>
+  </div>
+
+  <!-- HISTORIAL (siempre visible abajo) -->
+  <div class="htit">Ventas de hoy</div>
+  <div id="hist"></div>
 
 </div>
 </div>
@@ -193,227 +191,288 @@ body { font-family: 'DM Sans', sans-serif; background: var(--ink); color: var(--
 <script>
 const API = 'https://script.google.com/macros/s/AKfycbyEPZ4Q2tczGhhQ6BsvVsSkf9Zmni5OkDR-ul_vNsSuKFLXN0JCMoyKPbJoJEFQkg/exec';
 
-let inv = [], ventasHoy = [], joyaActual = null, modo = 'camara', procesando = false;
-let stream = null, scanLoop = null, canvas = null, ctx = null, scannerOn = false;
+// ── ESTADO GLOBAL ─────────────────────────────────────────
+// Solo una "pantalla" activa a la vez: 'scan' | 'preview' | 'result'
+// El scanner SOLO corre cuando pantalla === 'scan' Y modo === 'cam'
+let pantalla = 'scan';
+let modo = 'cam';
+let inv = [];
+let ventasHoy = [];
+let joyaActual = null;
 
-// STATUS
-function setStatus(t, msg) {
-  const bar = document.getElementById('status-bar');
-  const dot = bar.querySelector('.status-dot');
-  document.getElementById('status-txt').textContent = msg;
-  bar.className = 'status-bar ' + t;
-  dot.className = 'status-dot ' + (t==='ok'?'green':t==='error'?'red':'pulse');
-}
+// Scanner
+let camStream = null;
+let camTimer = null;
+let qrCanvas = null;
+let qrCtx = null;
 
-// CARGAR INVENTARIO
-async function cargar() {
-  setStatus('loading','Conectando con inventario…');
-  try {
-    const r = await fetch(API + '?action=getInventario').then(x=>x.json());
-    if (r.ok) {
-      inv = r.data || [];
-      const disp = inv.filter(j=>j.estado==='en-stock').length;
-      setStatus('ok', inv.length + ' joyas · ' + disp + ' disponibles');
-    } else { setStatus('error','Error: ' + r.msg); }
-  } catch(e) { setStatus('error','Sin conexión a internet'); }
-}
+// ── NAVEGACIÓN ENTRE PANTALLAS ────────────────────────────
+function mostrarPantalla(id) {
+  pantalla = id;
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('scr-' + id).classList.add('active');
+  document.getElementById('scroll').scrollTo({ top: 0, behavior: 'smooth' });
 
-// MODO
-function setModo(m) {
-  modo = m;
-  document.getElementById('btn-camara').classList.toggle('active', m==='camara');
-  document.getElementById('btn-manual').classList.toggle('active', m==='manual');
-  ocultarError(); ocultarPreview();
-  if (m === 'camara') {
-    document.getElementById('manual-wrap').classList.remove('show');
+  // El scanner solo corre en pantalla 'scan' modo 'cam'
+  if (id === 'scan' && modo === 'cam') {
     iniciarCamara();
   } else {
     pararCamara();
-    document.getElementById('scanner-wrap').classList.remove('show');
-    document.getElementById('scan-hint').style.display = 'none';
-    document.getElementById('manual-wrap').classList.add('show');
-    setTimeout(()=>document.getElementById('cod-input').focus(),150);
   }
 }
 
-// CAMARA
-async function iniciarCamara() {
-  document.getElementById('cam-error').style.display = 'none';
-  document.getElementById('scanner-wrap').classList.add('show');
-  document.getElementById('scan-hint').style.display = 'block';
-  if (!canvas) { canvas = document.createElement('canvas'); ctx = canvas.getContext('2d',{willReadFrequently:true}); }
+// ── STATUS BAR ────────────────────────────────────────────
+function setStatus(tipo, msg) {
+  const bar = document.getElementById('stbar');
+  const dot = document.getElementById('stdot');
+  document.getElementById('stmsg').textContent = msg;
+  bar.className = 'status ' + (tipo === 'ok' ? 'ok' : tipo === 'err' ? 'err' : '');
+  dot.className = 'dot ' + (tipo === 'ok' ? 'g' : tipo === 'err' ? 'r' : 'p');
+}
+
+// ── CARGAR INVENTARIO ─────────────────────────────────────
+async function cargar() {
+  setStatus('load', 'Conectando con inventario…');
   try {
-    stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:640},height:{ideal:640}}});
-    const vid = document.getElementById('qr-video');
-    vid.srcObject = stream;
-    await vid.play();
-    scannerOn = true;
-    scanLoop = setInterval(leerFrame, 200);
+    const r = await fetch(API + '?action=getInventario').then(x => x.json());
+    if (r.ok) {
+      inv = r.data || [];
+      const disp = inv.filter(j => j.estado === 'en-stock').length;
+      setStatus('ok', inv.length + ' joyas · ' + disp + ' disponibles');
+    } else {
+      setStatus('err', 'Error al cargar inventario');
+    }
   } catch(e) {
-    document.getElementById('cam-error').style.display = 'block';
-    document.getElementById('scanner-wrap').classList.remove('show');
-    document.getElementById('scan-hint').style.display = 'none';
-    setTimeout(()=>setModo('manual'), 600);
+    setStatus('err', 'Sin conexión a internet');
+  }
+}
+
+// ── MODO CÁMARA / MANUAL ──────────────────────────────────
+function setModo(m) {
+  modo = m;
+  document.getElementById('btn-cam').classList.toggle('on', m === 'cam');
+  document.getElementById('btn-man').classList.toggle('on', m === 'man');
+  ocultarError();
+
+  if (m === 'cam') {
+    document.getElementById('man-box').style.display = 'none';
+    document.getElementById('cam-box').style.display = 'block';
+    document.getElementById('cam-hint').style.display = 'block';
+    iniciarCamara();
+  } else {
+    pararCamara();
+    document.getElementById('cam-box').style.display = 'none';
+    document.getElementById('cam-hint').style.display = 'none';
+    document.getElementById('man-box').style.display = 'block';
+    document.getElementById('codinput').value = '';
+    setTimeout(() => document.getElementById('codinput').focus(), 150);
+  }
+}
+
+// ── CÁMARA ────────────────────────────────────────────────
+async function iniciarCamara() {
+  // Nunca arrancar la cámara si no estamos en la pantalla de escaneo
+  if (pantalla !== 'scan') return;
+  if (camStream) return; // ya está corriendo
+
+  document.getElementById('cam-err').style.display = 'none';
+  if (!qrCanvas) {
+    qrCanvas = document.createElement('canvas');
+    qrCtx = qrCanvas.getContext('2d', { willReadFrequently: true });
+  }
+
+  try {
+    camStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' }, width: { ideal: 640 }, height: { ideal: 640 } }
+    });
+    const vid = document.getElementById('vid');
+    vid.srcObject = camStream;
+    await vid.play();
+    camTimer = setInterval(leerFrame, 250);
+  } catch(e) {
+    document.getElementById('cam-err').style.display = 'block';
+    document.getElementById('cam-box').style.display = 'none';
+    document.getElementById('cam-hint').style.display = 'none';
+    setTimeout(() => setModo('man'), 600);
   }
 }
 
 function pararCamara() {
-  scannerOn = false;
-  clearInterval(scanLoop);
-  if (stream) { stream.getTracks().forEach(t=>t.stop()); stream = null; }
+  clearInterval(camTimer);
+  camTimer = null;
+  if (camStream) {
+    camStream.getTracks().forEach(t => t.stop());
+    camStream = null;
+  }
 }
 
 function leerFrame() {
-  if (!scannerOn) return;
-  const vid = document.getElementById('qr-video');
-  if (vid.readyState !== vid.HAVE_ENOUGH_DATA) return;
-  canvas.width = vid.videoWidth; canvas.height = vid.videoHeight;
-  ctx.drawImage(vid, 0, 0);
-  const img = ctx.getImageData(0,0,canvas.width,canvas.height);
-  const qr = jsQR(img.data, img.width, img.height, {inversionAttempts:'dontInvert'});
+  // Doble check: solo procesar si pantalla es scan
+  if (pantalla !== 'scan') { pararCamara(); return; }
+
+  const vid = document.getElementById('vid');
+  if (!vid || vid.readyState < vid.HAVE_ENOUGH_DATA) return;
+
+  qrCanvas.width = vid.videoWidth;
+  qrCanvas.height = vid.videoHeight;
+  qrCtx.drawImage(vid, 0, 0);
+
+  const imgData = qrCtx.getImageData(0, 0, qrCanvas.width, qrCanvas.height);
+  const qr = jsQR(imgData.data, imgData.width, imgData.height, { inversionAttempts: 'dontInvert' });
+
   if (qr && qr.data) {
     const cod = qr.data.trim().toUpperCase();
-    if ((cod.startsWith('JOY-') || /^JOY\d+$/.test(cod)) && !procesando) {
-      procesando = true;
+    if (cod.startsWith('JOY-') || /^JOY\d+$/.test(cod)) {
+      // DETENER cámara ANTES de cualquier otra cosa
       pararCamara();
-      setTimeout(() => procesarCodigo(cod), 50);
+      // Vibrar como feedback
+      if (navigator.vibrate) navigator.vibrate(50);
+      // Pequeño delay para asegurar que la cámara paró
+      setTimeout(() => buscarYMostrar(cod), 80);
     }
   }
 }
 
-// MANUAL
+// ── BUSCAR JOYA Y MOSTRAR PREVIEW ────────────────────────
 function buscarManual() {
-  const v = (document.getElementById('cod-input').value||'').trim().toUpperCase();
-  if (!v) { mostrarError('Ingresa un código'); return; }
-  procesarCodigo(v);
+  const cod = (document.getElementById('codinput').value || '').trim().toUpperCase();
+  if (!cod) { mostrarError('Ingresa un código'); return; }
+  buscarYMostrar(cod);
 }
-document.addEventListener('DOMContentLoaded',()=>{
-  document.getElementById('cod-input').addEventListener('keydown',e=>{ if(e.key==='Enter') buscarManual(); });
-});
 
-// PROCESAR CÓDIGO
-function procesarCodigo(cod) {
-  if (navigator.vibrate) navigator.vibrate(40);
+function buscarYMostrar(cod) {
   ocultarError();
   if (!inv.length) {
-    setStatus('loading','Cargando inventario…');
-    cargar().then(() => {
-      if (!inv.length) { mostrarError('Inventario no cargado. Verifica conexión.'); reanudar(); return; }
-      resolverJoya(cod);
-    });
+    mostrarError('Inventario no cargado. Espera un momento.');
+    if (modo === 'cam') setTimeout(() => iniciarCamara(), 2000);
     return;
   }
-  resolverJoya(cod);
-}
+  const j = inv.find(x => String(x.codigo).toUpperCase() === cod);
+  if (!j) {
+    mostrarError('Código "' + cod + '" no encontrado.');
+    if (modo === 'cam') setTimeout(() => iniciarCamara(), 2000);
+    return;
+  }
+  if (j.estado === 'vendida') {
+    mostrarError('Esta joya ya fue vendida el ' + (j.fechaVenta || '—') + '.');
+    if (modo === 'cam') setTimeout(() => iniciarCamara(), 2000);
+    return;
+  }
 
-function resolverJoya(cod) {
-  const j = inv.find(x => String(x.codigo).toUpperCase() === cod.toUpperCase());
-  if (!j) { mostrarError('Código "' + cod + '" no encontrado en el inventario.'); reanudar(); return; }
-  if (j.estado === 'vendida') { mostrarError('Esta joya ya fue vendida el ' + (j.fechaVenta || '—') + '.'); reanudar(); return; }
+  // Joya encontrada — llenar preview y cambiar pantalla
   joyaActual = j;
-  document.querySelector('.scroll').scrollTo({ top: 0, behavior: 'smooth' });
-  setTimeout(() => mostrarPreview(j), 100);
-}
-
-function reanudar() {
-  procesando = false;
-  if (modo==='camara') setTimeout(()=>{ if(!scannerOn){ document.getElementById('scanner-wrap').classList.add('show'); iniciarCamara(); } },2500);
-}
-
-// PREVIEW
-function mostrarPreview(j) {
-  // Ocultar todo el flujo de escaneo
-  document.getElementById('mode-toggle').style.display = 'none';
-  document.getElementById('scanner-wrap').classList.remove('show');
-  document.getElementById('scan-hint').style.display = 'none';
-  document.getElementById('manual-wrap').classList.remove('show');
-  document.getElementById('cam-error').style.display = 'none';
-  ocultarError();
   document.getElementById('p-cod').textContent = j.codigo;
-  document.getElementById('p-nom').textContent = j.nombre||'—';
-  document.getElementById('p-sub').textContent = (j.tipo||'')+(j.material?' · '+j.material:'');
-  document.getElementById('p-prec').textContent = '$'+Number(j.venta).toLocaleString('es-CL');
-  document.getElementById('p-mat').textContent = j.material||'—';
-  document.getElementById('p-est').textContent = 'Disponible para venta';
-  document.getElementById('confirm-btn').disabled = false;
-  document.getElementById('confirm-btn').textContent = 'Confirmar venta';
-  document.getElementById('preview-card').style.display = 'block';
-}
-function ocultarPreview() { document.getElementById('preview-card').style.display='none'; joyaActual=null; }
+  document.getElementById('p-nom').textContent = j.nombre || '—';
+  document.getElementById('p-sub').textContent = (j.tipo || '') + (j.material ? ' · ' + j.material : '');
+  document.getElementById('p-prec').textContent = '$' + Number(j.venta).toLocaleString('es-CL');
+  document.getElementById('p-mat').textContent = j.material || '—';
+  document.getElementById('cbtn').disabled = false;
+  document.getElementById('cbtn').textContent = 'Confirmar venta';
 
-function cancelar() {
-  procesando = false;
-  ocultarPreview(); ocultarError();
-  document.getElementById('mode-toggle').style.display='flex';
-  if (modo==='camara') { document.getElementById('scanner-wrap').classList.add('show'); document.getElementById('scan-hint').style.display='block'; iniciarCamara(); }
-  else { document.getElementById('manual-wrap').classList.add('show'); document.getElementById('cod-input').value=''; document.getElementById('cod-input').focus(); }
+  // Cambiar a pantalla preview — esto para la cámara automáticamente
+  mostrarPantalla('preview');
 }
 
-// CONFIRMAR
+// ── CONFIRMAR VENTA ───────────────────────────────────────
 async function confirmarVenta() {
   if (!joyaActual) return;
-  const btn = document.getElementById('confirm-btn');
-  btn.disabled=true; btn.innerHTML='<span class="spinner"></span>Registrando…';
+  const btn = document.getElementById('cbtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Registrando…';
+
   try {
-    const r = await fetch(API,{method:'POST',body:JSON.stringify({action:'venderJoya',codigo:joyaActual.codigo,registradoPor:'joyeria'})}).then(x=>x.json());
+    const r = await fetch(API, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'venderJoya', codigo: joyaActual.codigo, registradoPor: 'joyeria' })
+    }).then(x => x.json());
+
     if (r.ok) {
-      if (navigator.vibrate) navigator.vibrate([30,50,90]);
-      const idx = inv.findIndex(x=>x.codigo===joyaActual.codigo);
-      if(idx>=0){inv[idx].estado='vendida';inv[idx].fechaVenta=hoy();}
-      ventasHoy.unshift({codigo:joyaActual.codigo,nombre:joyaActual.nombre,precio:joyaActual.venta,hora:hora()});
+      if (navigator.vibrate) navigator.vibrate([30, 50, 90]);
+      // Actualizar inventario local
+      const idx = inv.findIndex(x => x.codigo === joyaActual.codigo);
+      if (idx >= 0) { inv[idx].estado = 'vendida'; inv[idx].fechaVenta = hoy(); }
+
+      // Actualizar status
+      const disp = inv.filter(j => j.estado === 'en-stock').length;
+      setStatus('ok', disp + ' joyas disponibles en stock');
+
+      // Historial
+      ventasHoy.unshift({ codigo: joyaActual.codigo, nombre: joyaActual.nombre, precio: joyaActual.venta, hora: horaActual() });
       renderHist();
-      document.getElementById('ok-det').innerHTML = '<strong>'+joyaActual.codigo+'</strong> — '+joyaActual.nombre+'<br>Precio: $'+Number(joyaActual.venta).toLocaleString('es-CL');
-      document.getElementById('preview-card').style.display='none';
-      document.getElementById('mode-toggle').style.display='none';
-      document.getElementById('resultado-ok').style.display='block';
-      const disp=inv.filter(j=>j.estado==='en-stock').length;
-      setStatus('ok',disp+' joyas disponibles en stock');
-      joyaActual=null;
+
+      // Pantalla resultado
+      document.getElementById('rdet').innerHTML =
+        '<strong>' + joyaActual.codigo + '</strong> — ' + joyaActual.nombre +
+        '<br>Precio: $' + Number(joyaActual.venta).toLocaleString('es-CL');
+
+      joyaActual = null;
+      mostrarPantalla('result');
+
     } else {
-      btn.disabled=false; btn.textContent='Confirmar venta';
-      mostrarError(r.msg||'Error al registrar. Intenta de nuevo.');
+      btn.disabled = false;
+      btn.textContent = 'Confirmar venta';
+      mostrarError(r.msg || 'Error al registrar. Intenta de nuevo.');
     }
   } catch(e) {
-    btn.disabled=false; btn.textContent='Confirmar venta';
+    btn.disabled = false;
+    btn.textContent = 'Confirmar venta';
     mostrarError('Sin conexión. Verifica internet.');
   }
 }
 
-function nuevaVenta() {
-  procesando = false;
-  document.getElementById('resultado-ok').style.display='none';
-  document.getElementById('mode-toggle').style.display='flex';
+// ── VOLVER A ESCANEAR ─────────────────────────────────────
+function irAEscanear() {
+  joyaActual = null;
   ocultarError();
-  if(modo==='camara'){ document.getElementById('scanner-wrap').classList.add('show'); document.getElementById('scan-hint').style.display='block'; iniciarCamara(); }
-  else { document.getElementById('manual-wrap').classList.add('show'); document.getElementById('cod-input').value=''; setTimeout(()=>document.getElementById('cod-input').focus(),100); }
+  document.getElementById('codinput').value = '';
+  mostrarPantalla('scan');
 }
 
-function mostrarError(m){ const e=document.getElementById('error-box'); e.textContent=m; e.style.display='block'; setTimeout(()=>e.style.display='none',5000); }
-function ocultarError(){ document.getElementById('error-box').style.display='none'; }
+// ── ERROR ─────────────────────────────────────────────────
+function mostrarError(msg) {
+  const el = document.getElementById('errbox');
+  el.textContent = msg;
+  el.style.display = 'block';
+  setTimeout(() => el.style.display = 'none', 5000);
+}
+function ocultarError() { document.getElementById('errbox').style.display = 'none'; }
 
+// ── HISTORIAL ─────────────────────────────────────────────
 function renderHist() {
-  const el=document.getElementById('hist-list');
-  if(!ventasHoy.length){el.innerHTML='<div class="hist-empty">Sin ventas registradas hoy</div>';return;}
-  el.innerHTML=ventasHoy.slice(0,8).map(v=>`
-    <div class="hist-item">
-      <div class="hist-left">
-        <span class="hist-codigo">${v.codigo}</span>
-        <span class="hist-nombre">${v.nombre}</span>
-        <span class="hist-hora">${v.hora}</span>
+  const el = document.getElementById('hist');
+  if (!ventasHoy.length) { el.innerHTML = '<div class="hempty">Sin ventas registradas hoy</div>'; return; }
+  el.innerHTML = ventasHoy.slice(0, 8).map(v => `
+    <div class="hitem">
+      <div class="hleft">
+        <span class="hcod">${v.codigo}</span>
+        <span class="hnom">${v.nombre}</span>
+        <span class="hhora">${v.hora}</span>
       </div>
-      <span class="hist-precio">$${Number(v.precio).toLocaleString('es-CL')}</span>
+      <span class="hprecio">$${Number(v.precio).toLocaleString('es-CL')}</span>
     </div>`).join('');
 }
 
-function hoy(){return new Date().toISOString().split('T')[0];}
-function hora(){return new Date().toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'});}
+// ── UTILS ─────────────────────────────────────────────────
+function hoy() { return new Date().toISOString().split('T')[0]; }
+function horaActual() { return new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' }); }
 
-// INIT
+// ── TECLADO MANUAL ────────────────────────────────────────
+document.getElementById('codinput').addEventListener('keydown', e => { if (e.key === 'Enter') buscarManual(); });
+
+// ── VISIBILIDAD (celular minimiza app) ────────────────────
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    pararCamara();
+  } else if (pantalla === 'scan' && modo === 'cam') {
+    setTimeout(iniciarCamara, 400);
+  }
+});
+
+// ── INIT ──────────────────────────────────────────────────
+renderHist();
 cargar();
-window.addEventListener('load',()=>setTimeout(iniciarCamara,400));
-document.addEventListener('visibilitychange',()=>{
-  if(document.hidden) pararCamara();
-  else if(modo==='camara'&&!joyaActual&&!document.getElementById('resultado-ok').style.display.includes('block')) iniciarCamara();
+window.addEventListener('load', () => {
+  setTimeout(() => iniciarCamara(), 500);
 });
 </script>
 </body>
