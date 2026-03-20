@@ -294,12 +294,24 @@ document.addEventListener('DOMContentLoaded',()=>{
 function procesarCodigo(cod) {
   if (navigator.vibrate) navigator.vibrate(40);
   ocultarError();
-  if (!inv.length) { mostrarError('Inventario no cargado. Espera y reintenta.'); reanudar(); return; }
-  const j = inv.find(x=>String(x.codigo).toUpperCase()===cod);
-  if (!j) { mostrarError('Código "'+cod+'" no encontrado.'); reanudar(); return; }
-  if (j.estado==='vendida') { mostrarError('Esta joya ya fue vendida el '+(j.fechaVenta||'—')+'.'); reanudar(); return; }
+  if (!inv.length) {
+    setStatus('loading','Cargando inventario…');
+    cargar().then(() => {
+      if (!inv.length) { mostrarError('Inventario no cargado. Verifica conexión.'); reanudar(); return; }
+      resolverJoya(cod);
+    });
+    return;
+  }
+  resolverJoya(cod);
+}
+
+function resolverJoya(cod) {
+  const j = inv.find(x => String(x.codigo).toUpperCase() === cod.toUpperCase());
+  if (!j) { mostrarError('Código "' + cod + '" no encontrado en el inventario.'); reanudar(); return; }
+  if (j.estado === 'vendida') { mostrarError('Esta joya ya fue vendida el ' + (j.fechaVenta || '—') + '.'); reanudar(); return; }
   joyaActual = j;
-  mostrarPreview(j);
+  document.querySelector('.scroll').scrollTo({ top: 0, behavior: 'smooth' });
+  setTimeout(() => mostrarPreview(j), 100);
 }
 
 function reanudar() {
@@ -308,10 +320,13 @@ function reanudar() {
 
 // PREVIEW
 function mostrarPreview(j) {
+  // Ocultar todo el flujo de escaneo
   document.getElementById('mode-toggle').style.display = 'none';
   document.getElementById('scanner-wrap').classList.remove('show');
   document.getElementById('scan-hint').style.display = 'none';
   document.getElementById('manual-wrap').classList.remove('show');
+  document.getElementById('cam-error').style.display = 'none';
+  ocultarError();
   document.getElementById('p-cod').textContent = j.codigo;
   document.getElementById('p-nom').textContent = j.nombre||'—';
   document.getElementById('p-sub').textContent = (j.tipo||'')+(j.material?' · '+j.material:'');
