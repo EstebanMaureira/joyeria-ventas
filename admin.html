@@ -456,70 +456,94 @@ async function agregarJoya() {
 function mostrarQR(codigo, nombre, precio) {
   const card = document.getElementById('qr-card');
   card.style.display = 'block';
+  const precioFmt = '$' + Number(precio).toLocaleString('es-CL');
   document.getElementById('qr-contenido').innerHTML = `
     <div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;">
-      <div id="qr-canvas-wrap" style="background:#fff;padding:12px;border-radius:8px;border:0.5px solid var(--ink-faint);display:inline-block;"></div>
+      <div>
+        <div style="font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Vista previa etiqueta</div>
+        <div style="background:#fff;border:0.5px solid var(--ink-faint);border-radius:6px;padding:6px;display:inline-flex;flex-direction:row;align-items:center;gap:5px;">
+          <div id="qr-canvas-wrap" style="width:57px;height:57px;flex-shrink:0;"></div>
+          <div style="display:flex;flex-direction:column;gap:2px;">
+            <span style="font-family:monospace;font-size:9px;color:#555;letter-spacing:.5px;">${codigo}</span>
+            <span style="font-size:11px;font-weight:bold;color:#1A1510;">${precioFmt}</span>
+          </div>
+        </div>
+        <div style="font-size:11px;color:var(--ink-soft);margin-top:5px;">Tamaño real: 2cm × 1.5cm</div>
+      </div>
       <div style="flex:1;min-width:160px;">
-        <div style="font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;color:var(--ink);margin-bottom:4px;">${nombre}</div>
-        <div style="font-family:monospace;font-size:14px;color:var(--ink-soft);letter-spacing:2px;margin-bottom:4px;">${codigo}</div>
-        <div style="font-size:13px;color:var(--ink-soft);">Precio venta: $${Number(precio).toLocaleString('es-CL')}</div>
-        <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;">
+        <div style="font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:600;color:var(--ink);margin-bottom:3px;">${nombre}</div>
+        <div style="font-family:monospace;font-size:13px;color:var(--ink-soft);letter-spacing:2px;margin-bottom:2px;">${codigo}</div>
+        <div style="font-size:13px;color:var(--ink-soft);margin-bottom:16px;">Precio venta: ${precioFmt}</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
           <button class="btn gold" onclick="imprimirEtiqueta('${codigo}','${nombre.replace(/'/g,"\\'")}',${precio})">Imprimir etiqueta</button>
-          <button class="btn" onclick="descargarQR('${codigo}')">Descargar QR</button>
+          <button class="btn" onclick="descargarQR('${codigo}')">Descargar PNG</button>
+        </div>
+        <div style="font-size:11px;color:var(--ink-soft);margin-top:10px;line-height:1.6;">
+          Imprime en papel adhesivo A4 · Escala 100% sin márgenes
         </div>
       </div>
     </div>`;
-  // Generar QR con la librería
   if (window.QRCode) {
     new QRCode(document.getElementById('qr-canvas-wrap'), {
-      text: codigo, width: 120, height: 120,
-      colorDark: '#1A1510', colorLight: '#ffffff',
-      correctLevel: QRCode.CorrectLevel.M
+      text: codigo, width: 57, height: 57,
+      colorDark: '#000000', colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.H
     });
-  } else {
-    document.getElementById('qr-canvas-wrap').innerHTML = `<div style="width:120px;height:120px;display:flex;align-items:center;justify-content:center;font-family:monospace;font-size:11px;color:var(--ink-soft);text-align:center;border:1px dashed var(--ink-faint);">${codigo}</div>`;
   }
 }
 
 function descargarQR(codigo) {
-  const wrap = document.getElementById('qr-canvas-wrap');
-  const canvas = wrap.querySelector('canvas');
-  if (!canvas) { toast('No se pudo generar el QR', 'error'); return; }
-  const a = document.createElement('a');
-  a.download = 'QR-' + codigo + '.png';
-  a.href = canvas.toDataURL('image/png');
-  a.click();
+  const tmp = document.createElement('div');
+  tmp.style.cssText = 'position:fixed;left:-9999px;top:0;';
+  document.body.appendChild(tmp);
+  new QRCode(tmp, { text: codigo, width: 400, height: 400, colorDark:'#000', colorLight:'#fff', correctLevel: QRCode.CorrectLevel.H });
+  setTimeout(() => {
+    const canvas = tmp.querySelector('canvas');
+    if (!canvas) { toast('Error al generar QR','error'); document.body.removeChild(tmp); return; }
+    const a = document.createElement('a');
+    a.download = 'QR-' + codigo + '.png';
+    a.href = canvas.toDataURL('image/png');
+    a.click();
+    document.body.removeChild(tmp);
+  }, 400);
 }
 
 function imprimirEtiqueta(codigo, nombre, precio) {
-  const wrap = document.getElementById('qr-canvas-wrap');
-  const canvas = wrap ? wrap.querySelector('canvas') : null;
-  const qrSrc = canvas ? canvas.toDataURL('image/png') : '';
-  const win = window.open('', '_blank');
-  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=DM+Sans:wght@400;500&display=swap');
-    body{margin:0;padding:20px;font-family:'DM Sans',sans-serif;background:#fff;}
-    .etiqueta{display:inline-flex;align-items:center;gap:14px;border:1.5px solid #1A1510;border-radius:10px;padding:14px 18px;max-width:320px;}
-    .qr-img{width:80px;height:80px;flex-shrink:0;}
-    .info{display:flex;flex-direction:column;gap:3px;}
-    .nom{font-family:'Cormorant Garamond',serif;font-size:15px;font-weight:600;color:#1A1510;line-height:1.2;}
-    .cod{font-family:monospace;font-size:11px;color:#8C7D6E;letter-spacing:1px;}
-    .prec{font-size:13px;font-weight:500;color:#1A1510;}
-    @media print{body{padding:0;}.etiqueta{border-color:#000;}}
-  </style></head><body>
-  <div class="etiqueta">
-    ${qrSrc ? `<img class="qr-img" src="${qrSrc}">` : `<div style="width:80px;height:80px;display:flex;align-items:center;justify-content:center;border:1px solid #ccc;font-size:10px;font-family:monospace;text-align:center;">${codigo}</div>`}
-    <div class="info">
-      <div class="nom">${nombre}</div>
-      <div class="cod">${codigo}</div>
-      <div class="prec">$${Number(precio).toLocaleString('es-CL')}</div>
+  const tmp = document.createElement('div');
+  tmp.style.cssText = 'position:fixed;left:-9999px;top:0;';
+  document.body.appendChild(tmp);
+  new QRCode(tmp, { text: codigo, width: 400, height: 400, colorDark:'#000', colorLight:'#fff', correctLevel: QRCode.CorrectLevel.H });
+  setTimeout(() => {
+    const canvas = tmp.querySelector('canvas');
+    const qrSrc = canvas ? canvas.toDataURL('image/png') : '';
+    document.body.removeChild(tmp);
+    const precioFmt = '$' + Number(precio).toLocaleString('es-CL');
+    const win = window.open('', '_blank');
+    win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+    <style>
+      @page { margin: 8mm; size: A4; }
+      body { margin: 0; font-family: Arial, sans-serif; background: #fff; }
+      .etiq { display: inline-flex; flex-direction: row; align-items: center; gap: 1.5mm;
+              border: 0.2mm solid #ccc; border-radius: 1mm; padding: 1.5mm;
+              width: 28mm; box-sizing: border-box; }
+      img { width: 15mm; height: 15mm; flex-shrink: 0; image-rendering: crisp-edges; }
+      .info { display: flex; flex-direction: column; gap: 1mm; overflow: hidden; }
+      .cod { font-family: monospace; font-size: 5.5pt; color: #555; white-space: nowrap; }
+      .prec { font-size: 8pt; font-weight: bold; color: #1A1510; white-space: nowrap; }
+    </style></head><body>
+    <div class="etiq">
+      <img src="${qrSrc}">
+      <div class="info">
+        <div class="cod">${codigo}</div>
+        <div class="prec">${precioFmt}</div>
+      </div>
     </div>
-  </div>
-  <script>window.onload=()=>setTimeout(()=>{window.print();},400);<\/script>
-  </body></html>`);
-  win.document.close();
+    <script>setTimeout(()=>window.print(),500)<\/script>
+    </body></html>`);
+    win.document.close();
+  }, 400);
 }
+
 
 function limpiarForm() {
   ['n-nombre','n-costo','n-venta','n-comision','n-material','n-notas'].forEach(id=>document.getElementById(id).value='');
@@ -612,7 +636,7 @@ function showTab(id, btn) {
 }
 
 // ── LOGIN ─────────────────────────────────────────────────
-const CLAVE = 'castro2024'; // ← CAMBIA ESTA CLAVE
+const CLAVE = 'joyeria2024'; // ← CAMBIA ESTA CLAVE
 
 function checkLogin() {
   const val = document.getElementById('login-input').value;
