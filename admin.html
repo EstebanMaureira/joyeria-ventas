@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestión Joyería — Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold: #B8860B;
+  --gold-light: #F5E6B8;
+  --gold-pale: #FDFAF2;
+  --ink: #1A1510;
+  --ink-mid: #4A3F35;
+  --ink-soft: #8C7D6E;
+  --ink-faint: #E8E0D5;
+  --green: #2D6A4F;
+  --green-light: #D8F3DC;
+  --red: #9B2335;
+  --red-light: #FDECEA;
+  --amber: #92400E;
+  --amber-light: #FEF3C7;
+  --white: #FFFFFF;
+  --surface: #FDFAF2;
+  --radius: 10px;
+  --radius-sm: 6px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'DM Sans', sans-serif; background: var(--surface); color: var(--ink); min-height: 100vh; }
+
+/* LOGIN */
+.login-screen { position: fixed; inset: 0; background: var(--ink); display: flex; align-items: center; justify-content: center; z-index: 9999; }
+.login-box { background: rgba(255,255,255,0.06); border: 0.5px solid rgba(184,134,11,0.3); border-radius: 16px; padding: 40px 36px; width: 100%; max-width: 360px; text-align: center; }
+.login-logo { font-family: 'Cormorant Garamond', serif; font-size: 26px; color: var(--gold-light); letter-spacing: 3px; font-weight: 600; margin-bottom: 6px; }
+.login-sub { font-size: 12px; color: var(--ink-soft); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 32px; }
+.login-label { font-size: 11px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 1px; text-align: left; display: block; margin-bottom: 7px; }
+.login-input { width: 100%; padding: 13px 16px; border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; font-size: 16px; background: rgba(255,255,255,0.07); color: var(--white); font-family: 'DM Sans', sans-serif; text-align: center; letter-spacing: 3px; transition: border-color .2s; }
+.login-input:focus { outline: none; border-color: var(--gold); }
+.login-input::placeholder { letter-spacing: 1px; color: rgba(255,255,255,0.2); font-size: 13px; }
+.login-btn { width: 100%; margin-top: 14px; padding: 13px; background: var(--gold); color: var(--ink); border: none; border-radius: 8px; font-size: 15px; font-family: 'DM Sans', sans-serif; font-weight: 500; cursor: pointer; transition: opacity .15s; }
+.login-btn:hover { opacity: .88; }
+.login-error { margin-top: 12px; font-size: 13px; color: #F5C2C7; display: none; }
+.login-hint { margin-top: 20px; font-size: 11px; color: rgba(255,255,255,0.15); }
+
+/* HEADER */
+.header { background: var(--ink); padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; height: 56px; position: sticky; top: 0; z-index: 100; }
+.logo { font-family: 'Cormorant Garamond', serif; font-size: 20px; color: var(--gold-light); letter-spacing: 2px; font-weight: 600; }
+.header-meta { font-size: 12px; color: var(--ink-soft); }
+.sync-btn { padding: 6px 14px; background: transparent; border: 0.5px solid var(--gold); color: var(--gold-light); border-radius: var(--radius-sm); font-size: 12px; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+.sync-btn:hover { background: rgba(184,134,11,0.15); }
+
+/* NAV TABS */
+.nav { background: var(--white); border-bottom: 0.5px solid var(--ink-faint); padding: 0 2rem; display: flex; gap: 0; }
+.nav-tab { padding: 14px 20px; font-size: 13px; color: var(--ink-soft); cursor: pointer; border: none; background: none; border-bottom: 2px solid transparent; margin-bottom: -1px; font-family: 'DM Sans', sans-serif; transition: color .2s; }
+.nav-tab.active { color: var(--ink); border-bottom-color: var(--gold); font-weight: 500; }
+.nav-tab:hover { color: var(--ink); }
+
+/* MAIN */
+.main { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
+.section { display: none; }
+.section.active { display: block; }
+
+/* METRICS */
+.metrics { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; margin-bottom: 2rem; }
+.metric { background: var(--white); border: 0.5px solid var(--ink-faint); border-radius: var(--radius); padding: 16px 18px; }
+.metric-label { font-size: 11px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+.metric-value { font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 600; color: var(--ink); }
+.metric-sub { font-size: 11px; color: var(--ink-soft); margin-top: 3px; }
+
+/* CARDS */
+.card { background: var(--white); border: 0.5px solid var(--ink-faint); border-radius: var(--radius); padding: 1.25rem 1.5rem; margin-bottom: 1.25rem; }
+.card-title { font-family: 'Cormorant Garamond', serif; font-size: 17px; font-weight: 600; color: var(--ink); margin-bottom: 1rem; }
+
+/* FORM */
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.form-group { display: flex; flex-direction: column; gap: 5px; }
+.form-group.full { grid-column: 1/-1; }
+label { font-size: 11px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.8px; }
+input, select, textarea { padding: 9px 12px; border: 0.5px solid var(--ink-faint); border-radius: var(--radius-sm); font-size: 13px; background: var(--surface); color: var(--ink); font-family: 'DM Sans', sans-serif; transition: border-color .2s; }
+input:focus, select:focus { outline: none; border-color: var(--gold); }
+
+/* BUTTONS */
+.btn { padding: 9px 18px; border-radius: var(--radius-sm); font-size: 13px; cursor: pointer; border: 0.5px solid var(--ink-faint); background: var(--white); color: var(--ink); font-family: 'DM Sans', sans-serif; transition: all .15s; }
+.btn:hover { background: var(--surface); }
+.btn.primary { background: var(--ink); color: var(--white); border-color: var(--ink); }
+.btn.primary:hover { background: var(--ink-mid); }
+.btn.gold { background: var(--gold); color: var(--white); border-color: var(--gold); }
+.btn.gold:hover { opacity: .88; }
+.btn.green { background: var(--green); color: var(--white); border-color: var(--green); }
+.btn.green:hover { opacity: .88; }
+.btn.danger { color: var(--red); border-color: #f0c0c4; }
+.btn.sm { padding: 5px 10px; font-size: 11px; }
+
+/* TABLE */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; padding: 9px 12px; font-size: 10px; font-weight: 500; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.8px; border-bottom: 0.5px solid var(--ink-faint); white-space: nowrap; }
+td { padding: 10px 12px; border-bottom: 0.5px solid var(--ink-faint); color: var(--ink); vertical-align: middle; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: var(--gold-pale); }
+
+/* BADGES */
+.badge { display: inline-block; padding: 3px 9px; border-radius: 99px; font-size: 11px; font-weight: 500; }
+.badge.en-stock { background: var(--green-light); color: var(--green); }
+.badge.vendida { background: var(--red-light); color: var(--red); }
+.badge.reservada { background: var(--amber-light); color: var(--amber); }
+
+/* SEARCH ROW */
+.search-row { display: flex; gap: 8px; margin-bottom: 1rem; flex-wrap: wrap; }
+.search-row input { flex: 1; min-width: 180px; }
+.search-row select { min-width: 140px; }
+
+/* PROFIT BOX */
+.profit-box { background: linear-gradient(135deg, var(--ink) 0%, var(--ink-mid) 100%); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 1.25rem; display: flex; justify-content: space-between; align-items: center; }
+.profit-label { font-size: 12px; color: var(--gold-light); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+.profit-value { font-family: 'Cormorant Garamond', serif; font-size: 38px; font-weight: 600; color: var(--white); }
+.profit-detail { font-size: 12px; color: var(--ink-soft); }
+
+/* TIPO ROW */
+.tipo-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 0.5px solid var(--ink-faint); font-size: 13px; }
+.tipo-row:last-child { border-bottom: none; }
+
+/* TOAST */
+.toast { position: fixed; bottom: 24px; right: 24px; background: var(--ink); color: var(--white); padding: 12px 20px; border-radius: var(--radius); font-size: 13px; opacity: 0; pointer-events: none; transition: opacity .3s; z-index: 999; max-width: 320px; }
+.toast.show { opacity: 1; }
+.toast.ok { border-left: 3px solid #2D6A4F; }
+.toast.error { border-left: 3px solid var(--red); }
+
+/* LOADING */
+.loading { text-align: center; padding: 2rem; color: var(--ink-soft); font-size: 13px; }
+.spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid var(--ink-faint); border-top-color: var(--gold); border-radius: 50%; animation: spin .7s linear infinite; margin-right: 8px; vertical-align: middle; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* EMPTY */
+.empty { text-align: center; padding: 2.5rem; color: var(--ink-soft); font-size: 13px; }
+
+/* INFORME */
+.mes-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 10px; }
+.mes-sel { font-family: 'Cormorant Garamond', serif; font-size: 18px; font-weight: 600; border: none; background: transparent; color: var(--ink); cursor: pointer; padding: 4px 8px; }
+
+/* QR BOX */
+.qr-box { background: var(--surface); border: 0.5px solid var(--ink-faint); border-radius: var(--radius); padding: 1.25rem; text-align: center; margin-top: 1rem; }
+.qr-code { font-family: 'Cormorant Garamond', serif; font-size: 32px; font-weight: 600; letter-spacing: 4px; color: var(--ink); }
+.qr-sub { font-size: 12px; color: var(--ink-soft); margin-top: 4px; }
+
+@media (max-width: 600px) {
+  .metrics { grid-template-columns: 1fr 1fr; }
+  .form-grid { grid-template-columns: 1fr; }
+  .form-group.full { grid-column: 1; }
+  .header { padding: 0 1rem; }
+  .main { padding: 1rem; }
+  .profit-box { flex-direction: column; gap: 12px; }
+}
+</style>
+</head>
+<body>
+
+<!-- PANTALLA DE LOGIN -->
+<div class="login-screen" id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">JOYERÍA</div>
+    <div class="login-sub">Panel de administración</div>
+    <label class="login-label">Clave de acceso</label>
+    <input class="login-input" id="login-input" type="password" placeholder="Ingresa tu clave"
+      autocomplete="current-password" onkeydown="if(event.key==='Enter')checkLogin()">
+    <button class="login-btn" onclick="checkLogin()">Ingresar</button>
+    <div class="login-error" id="login-error">Clave incorrecta</div>
+    <div class="login-hint">Solo para uso del administrador</div>
+  </div>
+</div>
+
+<div class="header">
+  <div class="logo">JOYERÍA</div>
+  <button class="sync-btn" onclick="cargarInventario()">↻ Sincronizar</button>
+</div>
+
+<div class="nav">
+  <button class="nav-tab active" onclick="showTab('inventario',this)">Inventario</button>
+  <button class="nav-tab" onclick="showTab('agregar',this)">Agregar joya</button>
+  <button class="nav-tab" onclick="showTab('informe',this)">Informe mensual</button>
+</div>
+
+<div class="main">
+
+  <!-- INVENTARIO -->
+  <div class="section active" id="tab-inventario">
+    <div class="metrics" id="metrics-row">
+      <div class="metric"><div class="metric-label">Cargando</div><div class="metric-value">—</div></div>
+      <div class="metric"><div class="metric-label">Cargando</div><div class="metric-value">—</div></div>
+      <div class="metric"><div class="metric-label">Cargando</div><div class="metric-value">—</div></div>
+      <div class="metric"><div class="metric-label">Cargando</div><div class="metric-value">—</div></div>
+    </div>
+    <div class="card">
+      <div class="search-row">
+        <input type="text" placeholder="Buscar por código, nombre o tipo…" id="q-search" oninput="renderTabla()">
+        <select id="q-estado" onchange="renderTabla()">
+          <option value="">Todos los estados</option>
+          <option value="en-stock">En stock</option>
+          <option value="vendida">Vendida</option>
+        </select>
+        <select id="q-tipo" onchange="renderTabla()">
+          <option value="">Todos los tipos</option>
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Código</th><th>Nombre</th><th>Tipo</th><th>Costo</th><th>Precio venta</th><th>Comisión</th><th>Tu ingreso</th><th>Estado</th><th>Fecha ingreso</th><th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-body"><tr><td colspan="10"><div class="loading"><span class="spinner"></span>Cargando inventario…</div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- AGREGAR JOYA -->
+  <div class="section" id="tab-agregar">
+    <div class="card" style="max-width:580px;">
+      <div class="card-title">Registrar nueva joya</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Nombre / descripción</label>
+          <input type="text" id="n-nombre" placeholder="Ej: Anillo solitario oro 18k">
+        </div>
+        <div class="form-group">
+          <label>Tipo de joya</label>
+          <select id="n-tipo" onchange="sugerirComision()">
+            <option value="Anillo">Anillo</option>
+            <option value="Collar">Collar</option>
+            <option value="Pulsera">Pulsera</option>
+            <option value="Pendientes">Pendientes</option>
+            <option value="Broche">Broche</option>
+            <option value="Otro">Otro</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Precio de costo ($)</label>
+          <input type="number" id="n-costo" placeholder="0" min="0" oninput="calcMargen()">
+        </div>
+        <div class="form-group">
+          <label>Precio de venta público ($)</label>
+          <input type="number" id="n-venta" placeholder="0" min="0" oninput="calcMargen()">
+        </div>
+        <div class="form-group">
+          <label>% Comisión joyería</label>
+          <input type="number" id="n-comision" placeholder="30" min="0" max="100" oninput="calcMargen()">
+        </div>
+        <div class="form-group">
+          <label>Material</label>
+          <input type="text" id="n-material" placeholder="Ej: Oro 18k, Plata 925">
+        </div>
+        <div class="form-group full">
+          <label>Notas (opcional)</label>
+          <input type="text" id="n-notas" placeholder="Detalles adicionales">
+        </div>
+      </div>
+      <div id="margen-preview" style="display:none;margin-top:12px;padding:10px 14px;background:var(--gold-pale);border:0.5px solid var(--gold-light);border-radius:var(--radius-sm);font-size:13px;color:var(--ink-mid);"></div>
+      <div style="display:flex;gap:8px;margin-top:1rem;">
+        <button class="btn primary" onclick="agregarJoya()" id="btn-agregar">Agregar al inventario</button>
+        <button class="btn" onclick="limpiarForm()">Limpiar</button>
+      </div>
+      <div id="msg-agregar" style="margin-top:10px;font-size:13px;"></div>
+    </div>
+    <div class="card" id="qr-card" style="max-width:580px;display:none;">
+      <div class="card-title">Código generado — etiqueta para la joya</div>
+      <div id="qr-contenido"></div>
+      <p style="margin-top:12px;font-size:12px;color:var(--ink-soft);">Anota este código en la etiqueta física de la joya. La joyería lo ingresará al registrar la venta.</p>
+    </div>
+  </div>
+
+  <!-- INFORME MENSUAL -->
+  <div class="section" id="tab-informe">
+    <div class="mes-row">
+      <select class="mes-sel" id="sel-mes" onchange="renderInforme()"></select>
+      <button class="btn gold" onclick="exportarCSV()">Exportar CSV</button>
+    </div>
+    <div id="informe-contenido"><div class="loading"><span class="spinner"></span>Cargando…</div></div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script>
+const API = 'https://script.google.com/macros/s/AKfycbyEPZ4Q2tczGhhQ6BsvVsSkf9Zmni5OkDR-ul_vNsSuKFLXN0JCMoyKPbJoJEFQkg/exec';
+const COMISIONES = { Anillo:30, Collar:25, Pulsera:25, Pendientes:20, Broche:20, Otro:25 };
+
+let db = [];
+let cargando = false;
+
+async function api(params) {
+  const url = API + '?' + new URLSearchParams(params);
+  const res = await fetch(url);
+  return res.json();
+}
+
+async function apiPost(body) {
+  const res = await fetch(API, { method:'POST', body: JSON.stringify(body) });
+  return res.json();
+}
+
+function toast(msg, tipo='ok') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + tipo;
+  setTimeout(() => t.className = 'toast', 3000);
+}
+
+async function cargarInventario() {
+  if (cargando) return;
+  cargando = true;
+  document.getElementById('tabla-body').innerHTML = '<tr><td colspan="10"><div class="loading"><span class="spinner"></span>Sincronizando con Google Sheets…</div></td></tr>';
+  try {
+    const r = await api({ action: 'getInventario' });
+    if (r.ok) {
+      db = r.data || [];
+      renderMetrics();
+      renderTabla();
+      renderFiltros();
+      renderSelMes();
+      renderInforme();
+    } else {
+      toast('Error al cargar: ' + r.msg, 'error');
+    }
+  } catch(e) {
+    toast('Sin conexión con Google Sheets', 'error');
+    document.getElementById('tabla-body').innerHTML = '<tr><td colspan="10"><div class="empty">No se pudo conectar. Verifica tu conexión.</div></td></tr>';
+  }
+  cargando = false;
+}
+
+function renderMetrics() {
+  const total = db.length;
+  const stock = db.filter(j=>j.estado==='en-stock').length;
+  const vendidas = db.filter(j=>j.estado==='vendida');
+  const ingresoTotal = vendidas.reduce((s,j)=>s+(Number(j.venta)*(1-Number(j.comision)/100)),0);
+  const comisionTotal = vendidas.reduce((s,j)=>s+(Number(j.venta)*Number(j.comision)/100),0);
+  document.getElementById('metrics-row').innerHTML = `
+    <div class="metric"><div class="metric-label">Total joyas</div><div class="metric-value">${total}</div></div>
+    <div class="metric"><div class="metric-label">En stock</div><div class="metric-value">${stock}</div></div>
+    <div class="metric"><div class="metric-label">Vendidas</div><div class="metric-value">${vendidas.length}</div></div>
+    <div class="metric"><div class="metric-label">Ingreso neto total</div><div class="metric-value">$${Math.round(ingresoTotal).toLocaleString('es-CL')}</div><div class="metric-sub">Comisiones: $${Math.round(comisionTotal).toLocaleString('es-CL')}</div></div>`;
+}
+
+function renderFiltros() {
+  const tipos = [...new Set(db.map(j=>j.tipo).filter(Boolean))];
+  const sel = document.getElementById('q-tipo');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Todos los tipos</option>' + tipos.map(t=>`<option value="${t}"${t===cur?' selected':''}>${t}</option>`).join('');
+}
+
+function renderTabla() {
+  const q = (document.getElementById('q-search').value||'').toLowerCase();
+  const est = document.getElementById('q-estado').value;
+  const tipo = document.getElementById('q-tipo').value;
+  let data = db.filter(j => {
+    const matchQ = !q || (j.codigo||'').toLowerCase().includes(q) || (j.nombre||'').toLowerCase().includes(q) || (j.tipo||'').toLowerCase().includes(q);
+    const matchE = !est || j.estado===est;
+    const matchT = !tipo || j.tipo===tipo;
+    return matchQ && matchE && matchT;
+  });
+  const tbody = document.getElementById('tabla-body');
+  if (!data.length) { tbody.innerHTML='<tr><td colspan="10"><div class="empty">No hay joyas que coincidan</div></td></tr>'; return; }
+  tbody.innerHTML = data.map(j => {
+    const ing = Math.round(Number(j.venta)*(1-Number(j.comision)/100));
+    return `<tr>
+      <td style="font-family:monospace;font-size:12px;">${j.codigo}</td>
+      <td>${j.nombre}${j.material?'<br><span style="font-size:11px;color:var(--ink-soft);">'+j.material+'</span>':''}</td>
+      <td>${j.tipo||'—'}</td>
+      <td>$${Number(j.costo).toLocaleString('es-CL')}</td>
+      <td>$${Number(j.venta).toLocaleString('es-CL')}</td>
+      <td>${j.comision}%</td>
+      <td style="color:var(--green);font-weight:500;">$${ing.toLocaleString('es-CL')}</td>
+      <td><span class="badge ${j.estado}">${j.estado==='en-stock'?'En stock':'Vendida'}</span></td>
+      <td style="color:var(--ink-soft);font-size:12px;">${j.fechaIngreso||'—'}</td>
+      <td style="white-space:nowrap;">
+        ${j.estado==='en-stock'?`<button class="btn green sm" onclick="venderDirecto('${j.codigo}')">Vender</button> `:''}
+        <button class="btn danger sm" onclick="eliminar('${j.codigo}')">Eliminar</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+async function venderDirecto(codigo) {
+  if (!confirm('¿Confirmar venta de ' + codigo + '?')) return;
+  try {
+    const r = await apiPost({ action:'venderJoya', codigo, registradoPor:'admin' });
+    if (r.ok) {
+      toast('Venta registrada · Tu ingreso: $' + Math.round(r.tuIngreso).toLocaleString('es-CL'), 'ok');
+      await cargarInventario();
+    } else {
+      toast(r.msg || 'Error al registrar', 'error');
+    }
+  } catch(e) { toast('Error de conexión', 'error'); }
+}
+
+async function eliminar(codigo) {
+  if (!confirm('¿Eliminar la joya ' + codigo + ' del inventario?')) return;
+  try {
+    const r = await apiPost({ action:'deleteJoya', codigo });
+    if (r.ok) { toast('Joya eliminada', 'ok'); await cargarInventario(); }
+    else toast(r.msg || 'Error', 'error');
+  } catch(e) { toast('Error de conexión', 'error'); }
+}
+
+function sugerirComision() {
+  const tipo = document.getElementById('n-tipo').value;
+  document.getElementById('n-comision').value = COMISIONES[tipo] || 25;
+  calcMargen();
+}
+
+function calcMargen() {
+  const costo = parseFloat(document.getElementById('n-costo').value)||0;
+  const venta = parseFloat(document.getElementById('n-venta').value)||0;
+  const com = parseFloat(document.getElementById('n-comision').value)||0;
+  const div = document.getElementById('margen-preview');
+  if (costo && venta && com) {
+    const comMonto = Math.round(venta*com/100);
+    const tuIngreso = Math.round(venta - comMonto);
+    const ganancia = tuIngreso - costo;
+    div.style.display='block';
+    div.innerHTML = `Tu ingreso neto: <strong>$${tuIngreso.toLocaleString('es-CL')}</strong> · Comisión joyería: $${comMonto.toLocaleString('es-CL')} · Ganancia sobre costo: <strong style="color:${ganancia>=0?'var(--green)':'var(--red)'}">$${ganancia.toLocaleString('es-CL')}</strong>`;
+  } else {
+    div.style.display='none';
+  }
+}
+
+async function agregarJoya() {
+  const nombre = document.getElementById('n-nombre').value.trim();
+  const tipo = document.getElementById('n-tipo').value;
+  const costo = parseFloat(document.getElementById('n-costo').value)||0;
+  const venta = parseFloat(document.getElementById('n-venta').value)||0;
+  const comision = parseFloat(document.getElementById('n-comision').value) || COMISIONES[tipo] || 25;
+  const material = document.getElementById('n-material').value.trim();
+  const notas = document.getElementById('n-notas').value.trim();
+  const msg = document.getElementById('msg-agregar');
+  if (!nombre || !costo || !venta) { msg.style.color='var(--red)'; msg.textContent='Completa nombre, precio de costo y precio de venta.'; return; }
+  const btn = document.getElementById('btn-agregar');
+  btn.disabled = true; btn.textContent = 'Guardando…';
+  try {
+    const r = await apiPost({ action:'addJoya', nombre, tipo, costo, venta, comision, material, notas });
+    if (r.ok) {
+      msg.style.color='var(--green)'; msg.textContent='Joya registrada: ' + r.codigo;
+      mostrarQR(r.codigo, nombre, venta);
+      await cargarInventario();
+    } else {
+      msg.style.color='var(--red)'; msg.textContent = r.msg || 'Error al guardar';
+    }
+  } catch(e) { msg.style.color='var(--red)'; msg.textContent='Error de conexión'; }
+  btn.disabled=false; btn.textContent='Agregar al inventario';
+}
+
+function mostrarQR(codigo, nombre, precio) {
+  const card = document.getElementById('qr-card');
+  card.style.display = 'block';
+  document.getElementById('qr-contenido').innerHTML = `
+    <div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;">
+      <div id="qr-canvas-wrap" style="background:#fff;padding:12px;border-radius:8px;border:0.5px solid var(--ink-faint);display:inline-block;"></div>
+      <div style="flex:1;min-width:160px;">
+        <div style="font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;color:var(--ink);margin-bottom:4px;">${nombre}</div>
+        <div style="font-family:monospace;font-size:14px;color:var(--ink-soft);letter-spacing:2px;margin-bottom:4px;">${codigo}</div>
+        <div style="font-size:13px;color:var(--ink-soft);">Precio venta: $${Number(precio).toLocaleString('es-CL')}</div>
+        <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;">
+          <button class="btn gold" onclick="imprimirEtiqueta('${codigo}','${nombre.replace(/'/g,"\\'")}',${precio})">Imprimir etiqueta</button>
+          <button class="btn" onclick="descargarQR('${codigo}')">Descargar QR</button>
+        </div>
+      </div>
+    </div>`;
+  // Generar QR con la librería
+  if (window.QRCode) {
+    new QRCode(document.getElementById('qr-canvas-wrap'), {
+      text: codigo, width: 120, height: 120,
+      colorDark: '#1A1510', colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M
+    });
+  } else {
+    document.getElementById('qr-canvas-wrap').innerHTML = `<div style="width:120px;height:120px;display:flex;align-items:center;justify-content:center;font-family:monospace;font-size:11px;color:var(--ink-soft);text-align:center;border:1px dashed var(--ink-faint);">${codigo}</div>`;
+  }
+}
+
+function descargarQR(codigo) {
+  const wrap = document.getElementById('qr-canvas-wrap');
+  const canvas = wrap.querySelector('canvas');
+  if (!canvas) { toast('No se pudo generar el QR', 'error'); return; }
+  const a = document.createElement('a');
+  a.download = 'QR-' + codigo + '.png';
+  a.href = canvas.toDataURL('image/png');
+  a.click();
+}
+
+function imprimirEtiqueta(codigo, nombre, precio) {
+  const wrap = document.getElementById('qr-canvas-wrap');
+  const canvas = wrap ? wrap.querySelector('canvas') : null;
+  const qrSrc = canvas ? canvas.toDataURL('image/png') : '';
+  const win = window.open('', '_blank');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=DM+Sans:wght@400;500&display=swap');
+    body{margin:0;padding:20px;font-family:'DM Sans',sans-serif;background:#fff;}
+    .etiqueta{display:inline-flex;align-items:center;gap:14px;border:1.5px solid #1A1510;border-radius:10px;padding:14px 18px;max-width:320px;}
+    .qr-img{width:80px;height:80px;flex-shrink:0;}
+    .info{display:flex;flex-direction:column;gap:3px;}
+    .nom{font-family:'Cormorant Garamond',serif;font-size:15px;font-weight:600;color:#1A1510;line-height:1.2;}
+    .cod{font-family:monospace;font-size:11px;color:#8C7D6E;letter-spacing:1px;}
+    .prec{font-size:13px;font-weight:500;color:#1A1510;}
+    @media print{body{padding:0;}.etiqueta{border-color:#000;}}
+  </style></head><body>
+  <div class="etiqueta">
+    ${qrSrc ? `<img class="qr-img" src="${qrSrc}">` : `<div style="width:80px;height:80px;display:flex;align-items:center;justify-content:center;border:1px solid #ccc;font-size:10px;font-family:monospace;text-align:center;">${codigo}</div>`}
+    <div class="info">
+      <div class="nom">${nombre}</div>
+      <div class="cod">${codigo}</div>
+      <div class="prec">$${Number(precio).toLocaleString('es-CL')}</div>
+    </div>
+  </div>
+  <script>window.onload=()=>setTimeout(()=>{window.print();},400);<\/script>
+  </body></html>`);
+  win.document.close();
+}
+
+function limpiarForm() {
+  ['n-nombre','n-costo','n-venta','n-comision','n-material','n-notas'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('n-comision').value=30;
+  document.getElementById('msg-agregar').textContent='';
+  document.getElementById('margen-preview').style.display='none';
+  document.getElementById('qr-card').style.display='none';
+}
+
+function getMeses() {
+  const meses = new Set();
+  db.forEach(j=>{ if(j.fechaVenta) meses.add(String(j.fechaVenta).substring(0,7)); });
+  const hoy = new Date().toISOString().substring(0,7);
+  meses.add(hoy);
+  return [...meses].sort().reverse();
+}
+
+function renderSelMes() {
+  const meses = getMeses();
+  const nombres = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  const sel = document.getElementById('sel-mes');
+  sel.innerHTML = meses.map(m=>{ const [y,mo]=m.split('-'); return `<option value="${m}">${nombres[parseInt(mo)-1]} ${y}</option>`; }).join('');
+}
+
+function renderInforme() {
+  const mes = document.getElementById('sel-mes').value;
+  if (!mes) return;
+  const vendidas = db.filter(j=>j.estado==='vendida' && j.fechaVenta && String(j.fechaVenta).startsWith(mes));
+  const totalVenta = vendidas.reduce((s,j)=>s+Number(j.venta),0);
+  const totalCom = vendidas.reduce((s,j)=>s+Math.round(Number(j.venta)*Number(j.comision)/100),0);
+  const totalMio = totalVenta - totalCom;
+  const porTipo = {};
+  vendidas.forEach(j=>{ if(!porTipo[j.tipo]) porTipo[j.tipo]={cant:0,venta:0,com:0}; porTipo[j.tipo].cant++; porTipo[j.tipo].venta+=Number(j.venta); porTipo[j.tipo].com+=Math.round(Number(j.venta)*Number(j.comision)/100); });
+  const el = document.getElementById('informe-contenido');
+  el.innerHTML = `
+    <div class="profit-box">
+      <div>
+        <div class="profit-label">Tu ingreso neto del mes</div>
+        <div class="profit-value">$${Math.round(totalMio).toLocaleString('es-CL')}</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:12px;color:#9CA3AF;margin-bottom:4px;">${vendidas.length} joya${vendidas.length!==1?'s':''} vendida${vendidas.length!==1?'s':''}</div>
+        <div style="font-size:12px;color:#9CA3AF;">Total facturado: $${Math.round(totalVenta).toLocaleString('es-CL')}</div>
+        <div style="font-size:12px;color:#9CA3AF;">Comisión joyería: $${Math.round(totalCom).toLocaleString('es-CL')}</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Por tipo de joya</div>
+      ${Object.keys(porTipo).length ? Object.entries(porTipo).map(([t,v])=>`
+        <div class="tipo-row">
+          <span>${t} <span style="color:var(--ink-soft);">(${v.cant} vendida${v.cant>1?'s':''})</span></span>
+          <span>Tu parte: <strong style="color:var(--green);">$${Math.round(v.venta-v.com).toLocaleString('es-CL')}</strong> &nbsp;·&nbsp; Comisión: $${Math.round(v.com).toLocaleString('es-CL')}</span>
+        </div>`).join('') : '<div class="empty">Sin ventas en este período</div>'}
+    </div>
+    <div class="card">
+      <div class="card-title">Detalle joyas vendidas</div>
+      ${vendidas.length ? `<div class="table-wrap"><table>
+        <thead><tr><th>Código</th><th>Nombre</th><th>Tipo</th><th>Precio venta</th><th>Comisión</th><th>Tu ingreso</th><th>Fecha venta</th></tr></thead>
+        <tbody>${vendidas.map(j=>`<tr>
+          <td style="font-family:monospace;font-size:12px;">${j.codigo}</td>
+          <td>${j.nombre}</td><td>${j.tipo}</td>
+          <td>$${Number(j.venta).toLocaleString('es-CL')}</td>
+          <td style="color:var(--amber);">$${Math.round(Number(j.venta)*Number(j.comision)/100).toLocaleString('es-CL')} (${j.comision}%)</td>
+          <td style="color:var(--green);font-weight:500;">$${Math.round(Number(j.venta)*(1-Number(j.comision)/100)).toLocaleString('es-CL')}</td>
+          <td style="color:var(--ink-soft);font-size:12px;">${j.fechaVenta}</td>
+        </tr>`).join('')}</tbody>
+      </table></div>` : '<div class="empty">Sin ventas en este período</div>'}
+    </div>
+    <div style="font-size:12px;color:var(--ink-soft);margin-bottom:1rem;">Joyas en stock al cierre: ${db.filter(j=>j.estado==='en-stock').length}</div>`;
+}
+
+function exportarCSV() {
+  const mes = document.getElementById('sel-mes').value;
+  const vendidas = db.filter(j=>j.estado==='vendida' && j.fechaVenta && String(j.fechaVenta).startsWith(mes));
+  if (!vendidas.length) { toast('Sin ventas en este período', 'error'); return; }
+  const header = 'Codigo,Nombre,Tipo,Material,Precio Costo,Precio Venta,Comision %,Comision $,Tu Ingreso,Fecha Venta\n';
+  const rows = vendidas.map(j=>[j.codigo,`"${j.nombre}"`,j.tipo,j.material||'',j.costo,j.venta,j.comision,Math.round(Number(j.venta)*Number(j.comision)/100),Math.round(Number(j.venta)*(1-Number(j.comision)/100)),j.fechaVenta].join(',')).join('\n');
+  const blob = new Blob([header+rows],{type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download='informe_'+mes+'.csv'; a.click();
+  toast('CSV exportado', 'ok');
+}
+
+function showTab(id, btn) {
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+  if (id==='informe') renderInforme();
+}
+
+// ── LOGIN ─────────────────────────────────────────────────
+const CLAVE = 'joyeria2024'; // ← CAMBIA ESTA CLAVE
+
+function checkLogin() {
+  const val = document.getElementById('login-input').value;
+  const err = document.getElementById('login-error');
+  if (val === CLAVE) {
+    document.getElementById('login-screen').style.display = 'none';
+    sessionStorage.setItem('joyeria_auth', '1');
+    cargarInventario();
+  } else {
+    err.style.display = 'block';
+    document.getElementById('login-input').value = '';
+    document.getElementById('login-input').focus();
+    setTimeout(() => err.style.display = 'none', 3000);
+  }
+}
+
+// Init
+document.getElementById('n-comision').value = 30;
+// Verificar si ya está autenticado en esta sesión
+if (sessionStorage.getItem('joyeria_auth') === '1') {
+  document.getElementById('login-screen').style.display = 'none';
+  cargarInventario();
+} else {
+  setTimeout(() => document.getElementById('login-input').focus(), 300);
+}
+</script>
+</body>
+</html>
