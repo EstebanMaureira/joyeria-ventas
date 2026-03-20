@@ -193,7 +193,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--ink); color: var(--
 <script>
 const API = 'https://script.google.com/macros/s/AKfycbyEPZ4Q2tczGhhQ6BsvVsSkf9Zmni5OkDR-ul_vNsSuKFLXN0JCMoyKPbJoJEFQkg/exec';
 
-let inv = [], ventasHoy = [], joyaActual = null, modo = 'camara';
+let inv = [], ventasHoy = [], joyaActual = null, modo = 'camara', procesando = false;
 let stream = null, scanLoop = null, canvas = null, ctx = null, scannerOn = false;
 
 // STATUS
@@ -273,9 +273,10 @@ function leerFrame() {
   const qr = jsQR(img.data, img.width, img.height, {inversionAttempts:'dontInvert'});
   if (qr && qr.data) {
     const cod = qr.data.trim().toUpperCase();
-    if (cod.startsWith('JOY-') || /^JOY\d+$/.test(cod)) {
+    if ((cod.startsWith('JOY-') || /^JOY\d+$/.test(cod)) && !procesando) {
+      procesando = true;
       pararCamara();
-      procesarCodigo(cod);
+      setTimeout(() => procesarCodigo(cod), 50);
     }
   }
 }
@@ -315,6 +316,7 @@ function resolverJoya(cod) {
 }
 
 function reanudar() {
+  procesando = false;
   if (modo==='camara') setTimeout(()=>{ if(!scannerOn){ document.getElementById('scanner-wrap').classList.add('show'); iniciarCamara(); } },2500);
 }
 
@@ -340,6 +342,7 @@ function mostrarPreview(j) {
 function ocultarPreview() { document.getElementById('preview-card').style.display='none'; joyaActual=null; }
 
 function cancelar() {
+  procesando = false;
   ocultarPreview(); ocultarError();
   document.getElementById('mode-toggle').style.display='flex';
   if (modo==='camara') { document.getElementById('scanner-wrap').classList.add('show'); document.getElementById('scan-hint').style.display='block'; iniciarCamara(); }
@@ -377,6 +380,7 @@ async function confirmarVenta() {
 }
 
 function nuevaVenta() {
+  procesando = false;
   document.getElementById('resultado-ok').style.display='none';
   document.getElementById('mode-toggle').style.display='flex';
   ocultarError();
