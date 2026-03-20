@@ -288,7 +288,15 @@ async function iniciarCamara() {
     const vid = document.getElementById('vid');
     vid.srcObject = camStream;
     await vid.play();
-    camTimer = setInterval(leerFrame, 250);
+    // Usar requestAnimationFrame en vez de setInterval — más estable en móvil
+    let frameCount = 0;
+    function scanLoop() {
+      if (!camStream) return; // cámara detenida, parar loop
+      frameCount++;
+      if (frameCount % 8 === 0) leerFrame(); // cada ~8 frames (~4 por segundo)
+      camTimer = requestAnimationFrame(scanLoop);
+    }
+    camTimer = requestAnimationFrame(scanLoop);
   } catch(e) {
     document.getElementById('cam-err').style.display = 'block';
     document.getElementById('cam-box').style.display = 'none';
@@ -298,38 +306,53 @@ async function iniciarCamara() {
 }
 
 function pararCamara() {
-  clearInterval(camTimer);
-  camTimer = null;
-  if (camStream) {
-    camStream.getTracks().forEach(t => t.stop());
-    camStream = null;
-  }
+  if (camTimer) { cancelAnimationFrame(camTimer); camTimer = null; }
+  if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; }
 }
 
-function leerFrame() {
-  // Doble check: solo procesar si pantalla es scan
-  if (pantalla !== 'scan') { pararCamara(); return; }
+// Detector nativo (más rápido y confiable en celulares modernos)
+let barcodeDetector = null;
+if ('BarcodeDetector' in window) {
+  try { barcodeDetector = new BarcodeDetector({ formats: ['qr_code'] }); } catch(e) {}
+}
 
+async function leerFrame() {
+  if (pantalla !== 'scan') { pararCamara(); return; }
   const vid = document.getElementById('vid');
   if (!vid || vid.readyState < vid.HAVE_ENOUGH_DATA) return;
 
-  qrCanvas.width = vid.videoWidth;
-  qrCanvas.height = vid.videoHeight;
-  qrCtx.drawImage(vid, 0, 0);
+  let cod = null;
 
-  const imgData = qrCtx.getImageData(0, 0, qrCanvas.width, qrCanvas.height);
-  const qr = jsQR(imgData.data, imgData.width, imgData.height, { inversionAttempts: 'dontInvert' });
+  // Intento 1: API nativa del celular (Chrome Android, Safari iOS 17+)
+  if (barcodeDetector) {
+    try {
+      const codes = await barcodeDetector.detect(vid);
+      if (codes && codes.length > 0) cod = codes[0].rawValue.trim().toUpperCase();
+    } catch(e) {}
+  }
 
-  if (qr && qr.data) {
-    const cod = qr.data.trim().toUpperCase();
-    if (cod.startsWith('JOY-') || /^JOY\d+$/.test(cod)) {
-      // DETENER cámara ANTES de cualquier otra cosa
-      pararCamara();
-      // Vibrar como feedback
-      if (navigator.vibrate) navigator.vibrate(50);
-      // Pequeño delay para asegurar que la cámara paró
-      setTimeout(() => buscarYMostrar(cod), 80);
-    }
+  // Intento 2: jsQR como respaldo
+  if (!cod) {
+    try {
+      qrCanvas.width = vid.videoWidth;
+      qrCanvas.height = vid.videoHeight;
+      qrCtx.drawImage(vid, 0, 0);
+      const imgData = qrCtx.getImageData(0, 0, qrCanvas.width, qrCanvas.height);
+      const qr = jsQR(imgData.data, imgData.width, imgData.height, { inversionAttempts: 'attemptBoth' });
+      if (qr && qr.data) cod = qr.data.trim().toUpperCase();
+    } catch(e) {}
+  }
+
+  if (cod && (cod.startsWith('JOY-') || /^JOY\d+$/.test(cod))) {
+    // Parar cámara PRIMERO
+    pararCamara();
+    if (navigator.vibrate) navigator.vibrate(50);
+    // Usar requestAnimationFrame para garantizar que el DOM actualice
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        buscarYMostrar(cod);
+      });
+    });
   }
 }
 
