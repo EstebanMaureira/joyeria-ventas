@@ -145,11 +145,12 @@ body { font-family: 'DM Sans', sans-serif; background: var(--ink); color: var(--
     <div class="cam-hint" id="cam-hint">Apunta la cámara al código de la etiqueta</div>
     <div class="cam-err" id="cam-err">No se pudo acceder a la cámara.<br><span style="font-size:12px;opacity:.8;">Usa "Ingresar código" o verifica permisos.</span></div>
 
-    <div class="manual-box" id="man-box" style="display:none;">
-      <div class="mlabel">Código de la joya</div>
+    <!-- Campo unificado: la cámara lo llena, la vendedora confirma -->
+    <div class="manual-box" id="man-box">
+      <div class="mlabel" id="cod-label">Código detectado</div>
       <input class="minput" id="codinput" type="text" placeholder="JOY-0001"
         autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
-      <button class="mbuscar" onclick="buscarManual()">Buscar joya →</button>
+      <button class="mbuscar" id="btn-buscar" onclick="buscarManual()">Buscar joya →</button>
     </div>
   </div>
 
@@ -253,18 +254,19 @@ function setModo(m) {
   document.getElementById('btn-cam').classList.toggle('on', m === 'cam');
   document.getElementById('btn-man').classList.toggle('on', m === 'man');
   ocultarError();
+  document.getElementById('codinput').value = '';
+  document.getElementById('man-box').style.display = 'block'; // siempre visible
 
   if (m === 'cam') {
-    document.getElementById('man-box').style.display = 'none';
     document.getElementById('cam-box').style.display = 'block';
     document.getElementById('cam-hint').style.display = 'block';
+    document.getElementById('cod-label').textContent = 'Código detectado por cámara';
     iniciarCamara();
   } else {
     pararCamara();
     document.getElementById('cam-box').style.display = 'none';
     document.getElementById('cam-hint').style.display = 'none';
-    document.getElementById('man-box').style.display = 'block';
-    document.getElementById('codinput').value = '';
+    document.getElementById('cod-label').textContent = 'Código de la joya';
     setTimeout(() => document.getElementById('codinput').focus(), 150);
   }
 }
@@ -343,16 +345,26 @@ async function leerFrame() {
     } catch(e) {}
   }
 
-  if (cod && (cod.startsWith('JOY-') || /^JOY\d+$/.test(cod))) {
-    // Parar cámara PRIMERO
-    pararCamara();
-    if (navigator.vibrate) navigator.vibrate(50);
-    // Usar requestAnimationFrame para garantizar que el DOM actualice
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        buscarYMostrar(cod);
-      });
-    });
+  if (cod) {
+    // Limpiar el codigo — extraer solo JOY-XXXX aunque venga con basura alrededor
+    const match = cod.match(/JOY-?\d+/);
+    const codLimpio = match ? match[0].replace('JOY', 'JOY-').replace('--','-') : cod;
+    if (codLimpio.startsWith('JOY-')) {
+      if (navigator.vibrate) navigator.vibrate(50);
+      // Llenar el campo de texto y resaltarlo — la vendedora ve el código y toca el botón
+      const input = document.getElementById('codinput');
+      input.value = codLimpio;
+      input.style.borderColor = 'var(--gold)';
+      input.style.background = 'rgba(184,134,11,0.15)';
+      document.getElementById('cod-label').textContent = '✓ QR detectado — confirma el código';
+      // Auto-buscar después de 600ms para dar tiempo visual
+      clearTimeout(window._autoSearch);
+      window._autoSearch = setTimeout(() => {
+        input.style.borderColor = '';
+        input.style.background = '';
+        buscarManual();
+      }, 600);
+    }
   }
 }
 
@@ -447,7 +459,12 @@ async function confirmarVenta() {
 function irAEscanear() {
   joyaActual = null;
   ocultarError();
-  document.getElementById('codinput').value = '';
+  clearTimeout(window._autoSearch);
+  const input = document.getElementById('codinput');
+  input.value = '';
+  input.style.borderColor = '';
+  input.style.background = '';
+  document.getElementById('cod-label').textContent = modo === 'cam' ? 'Código detectado por cámara' : 'Código de la joya';
   mostrarPantalla('scan');
 }
 
