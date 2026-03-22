@@ -111,14 +111,25 @@ tr:hover td { background: var(--gold-pale); }
 
 .rp-hint { background: var(--amber-light); border: 0.5px solid #FDE68A; border-radius: var(--radius-sm); padding: 12px 16px; font-size: 13px; color: var(--amber); margin-bottom: 1.25rem; line-height: 1.6; }
 
-.rp-item { background: var(--white); border: 0.5px solid var(--ink-faint); border-radius: var(--radius); padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 10px; flex-wrap: wrap; transition: border-color .15s; }
-.rp-item:hover { border-color: var(--gold); }
+.rp-item { background: var(--white); border: 0.5px solid var(--ink-faint); border-radius: var(--radius); padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 10px; flex-wrap: wrap; transition: border-color .15s; cursor: pointer; }
+.rp-item:hover { border-color: var(--gold); background: var(--gold-pale); }
+.rp-item.selected { border-color: var(--gold); background: var(--gold-pale); }
+.rp-check { width: 20px; height: 20px; border: 1.5px solid var(--ink-faint); border-radius: 5px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 13px; background: var(--white); transition: all .15s; }
+.rp-item.selected .rp-check { background: var(--gold); border-color: var(--gold); color: white; }
 .rp-info { flex: 1; min-width: 0; }
 .rp-codigo { font-family: monospace; font-size: 12px; color: var(--ink-soft); letter-spacing: 1px; margin-bottom: 3px; }
 .rp-nombre { font-size: 14px; font-weight: 500; color: var(--ink); margin-bottom: 3px; }
 .rp-det { font-size: 12px; color: var(--ink-soft); }
 .rp-precio { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 600; color: var(--ink); white-space: nowrap; }
 .rp-acciones { display: flex; gap: 6px; flex-shrink: 0; }
+
+/* Barra de selección flotante */
+.batch-bar { position: sticky; bottom: 0; background: var(--ink); border-top: 1px solid rgba(184,134,11,0.3); padding: 12px 16px; display: none; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 0 -1.5rem -1.25rem; border-radius: 0 0 var(--radius) var(--radius); }
+.batch-bar.visible { display: flex; }
+.batch-info { font-size: 13px; color: var(--gold-light); }
+.batch-info strong { font-family: 'Cormorant Garamond', serif; font-size: 18px; margin-right: 4px; }
+.batch-actions { display: flex; gap: 8px; }
+.batch-actions .btn { font-size: 12px; padding: 7px 14px; }
 
 @media (max-width: 600px) {
   .metrics { grid-template-columns: 1fr 1fr; }
@@ -228,18 +239,29 @@ tr:hover td { background: var(--gold-pale); }
 
   <!-- REIMPRIMIR ETIQUETA -->
   <div class="section" id="tab-etiquetas">
-    <div class="card">
-      <div class="card-title">Reimprimir etiqueta</div>
+    <div class="card" style="position:relative;overflow:hidden;">
+      <div class="card-title">Reimprimir etiquetas</div>
       <div class="rp-hint">
-        💡 Úsalo si una etiqueta se dañó, se perdió o necesitas una copia extra. Busca la joya e imprime sin tocar el inventario.
+        💡 Busca joyas, selecciona las que necesitas y haz clic en <strong>Imprimir selección</strong> — todas las etiquetas salen juntas en una sola hoja A4, aprovechando al máximo el papel.
       </div>
+
       <div class="rp-search-row">
-        <input type="text" id="rp-q" placeholder="Código (JOY-0001) o nombre de la joya…"
+        <input type="text" id="rp-q" placeholder="Código (JOY-0001), nombre, tipo o material…"
           oninput="buscarReimprimir()" autocomplete="off">
-        <button class="btn gold" onclick="buscarReimprimir()">Buscar</button>
+        <button class="btn" onclick="seleccionarTodosVisibles()" id="btn-sel-todos">Seleccionar todos</button>
       </div>
+
       <div id="rp-results">
-        <div class="empty">Escribe para buscar una joya</div>
+        <div class="empty">Escribe para buscar joyas</div>
+      </div>
+
+      <!-- Barra flotante de lote -->
+      <div class="batch-bar" id="batch-bar">
+        <div class="batch-info"><strong id="batch-count">0</strong> etiqueta(s) seleccionada(s)</div>
+        <div class="batch-actions">
+          <button class="btn danger" onclick="limpiarSeleccion()">✕ Limpiar</button>
+          <button class="btn gold" onclick="imprimirLote()">🖨 Imprimir selección</button>
+        </div>
       </div>
     </div>
   </div>
@@ -384,8 +406,10 @@ async function agregarJoya() {
 }
 
 // ══════════════════════════════════════════════════════════
-// REIMPRIMIR ETIQUETA
+// REIMPRIMIR ETIQUETA — con selección y lote
 // ══════════════════════════════════════════════════════════
+let seleccionados = new Set(); // Set de codigos seleccionados
+
 function buscarReimprimir() {
   const q=(document.getElementById('rp-q').value||'').trim().toLowerCase();
   const cont=document.getElementById('rp-results');
@@ -395,21 +419,109 @@ function buscarReimprimir() {
     (j.nombre||'').toLowerCase().includes(q)||
     (j.tipo||'').toLowerCase().includes(q)||
     (j.material||'').toLowerCase().includes(q)
-  ).slice(0,15);
+  ).slice(0,30);
   if(!hits.length){cont.innerHTML='<div class="empty">No se encontró ninguna joya</div>';return;}
+  renderRpItems(hits);
+}
+
+function renderRpItems(hits) {
+  const cont=document.getElementById('rp-results');
   cont.innerHTML=hits.map(j=>`
-    <div class="rp-item">
+    <div class="rp-item${seleccionados.has(j.codigo)?' selected':''}" id="rpi-${j.codigo}" onclick="toggleSeleccion('${j.codigo}')">
+      <div class="rp-check">${seleccionados.has(j.codigo)?'✓':''}</div>
       <div class="rp-info">
         <div class="rp-codigo">${j.codigo}</div>
         <div class="rp-nombre">${j.nombre}</div>
         <div class="rp-det">${j.tipo||''}${j.material?' · '+j.material:''} &nbsp;·&nbsp; <span class="badge ${j.estado}" style="font-size:10px;padding:2px 7px;">${j.estado==='en-stock'?'En stock':'Vendida'}</span></div>
       </div>
       <div class="rp-precio">$${Number(j.venta).toLocaleString('es-CL')}</div>
-      <div class="rp-acciones">
-        <button class="btn gold sm" onclick="imprimirEtiqueta('${j.codigo}','${j.nombre.replace(/'/g,"\\'")}',${j.venta})">🖨 Imprimir</button>
-        <button class="btn sm" onclick="descargarQR('${j.codigo}')">⬇ PNG</button>
+      <div class="rp-acciones" onclick="event.stopPropagation()">
+        <button class="btn sm" onclick="imprimirEtiqueta('${j.codigo}','${j.nombre.replace(/'/g,"\\'")}',${j.venta})" title="Imprimir solo esta">🖨</button>
+        <button class="btn sm" onclick="descargarQR('${j.codigo}')" title="Descargar PNG">⬇</button>
       </div>
     </div>`).join('');
+}
+
+function toggleSeleccion(codigo) {
+  if(seleccionados.has(codigo)) seleccionados.delete(codigo);
+  else seleccionados.add(codigo);
+  actualizarBatchBar();
+  // actualizar solo el item clickeado visualmente
+  const el=document.getElementById('rpi-'+codigo);
+  if(el){
+    el.classList.toggle('selected', seleccionados.has(codigo));
+    el.querySelector('.rp-check').textContent=seleccionados.has(codigo)?'✓':'';
+  }
+}
+
+function seleccionarTodosVisibles() {
+  const items=document.querySelectorAll('.rp-item');
+  const todos=[...items].map(el=>el.id.replace('rpi-',''));
+  const yaSeleccionados=todos.every(c=>seleccionados.has(c));
+  todos.forEach(c=>yaSeleccionados?seleccionados.delete(c):seleccionados.add(c));
+  // re-render visual
+  const q=(document.getElementById('rp-q').value||'').trim().toLowerCase();
+  if(q.length>=2){
+    const hits=db.filter(j=>(j.codigo||'').toLowerCase().includes(q)||(j.nombre||'').toLowerCase().includes(q)||(j.tipo||'').toLowerCase().includes(q)||(j.material||'').toLowerCase().includes(q)).slice(0,30);
+    renderRpItems(hits);
+  }
+  actualizarBatchBar();
+  document.getElementById('btn-sel-todos').textContent=yaSeleccionados?'Seleccionar todos':'Deseleccionar todos';
+}
+
+function limpiarSeleccion() {
+  seleccionados.clear();
+  actualizarBatchBar();
+  const items=document.querySelectorAll('.rp-item');
+  items.forEach(el=>{el.classList.remove('selected');el.querySelector('.rp-check').textContent='';});
+  document.getElementById('btn-sel-todos').textContent='Seleccionar todos';
+}
+
+function actualizarBatchBar() {
+  const bar=document.getElementById('batch-bar');
+  const n=seleccionados.size;
+  document.getElementById('batch-count').textContent=n;
+  bar.classList.toggle('visible', n>0);
+}
+
+// Imprime todas las etiquetas seleccionadas en una sola hoja
+function imprimirLote() {
+  if(!seleccionados.size){toast('No hay etiquetas seleccionadas','error');return;}
+  const joyas=db.filter(j=>seleccionados.has(j.codigo));
+  // Generar todos los QR en canvas ocultos, luego abrir ventana de impresión
+  const tmp=document.createElement('div'); tmp.style.cssText='position:fixed;left:-9999px;top:0;display:flex;flex-wrap:wrap;'; document.body.appendChild(tmp);
+  let generados=0;
+  const qrDivs={};
+  joyas.forEach(j=>{
+    const d=document.createElement('div'); d.id='lote-qr-'+j.codigo; tmp.appendChild(d);
+    qrDivs[j.codigo]=d;
+    new QRCode(d,{text:j.codigo,width:400,height:400,colorDark:'#000',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.H});
+  });
+  setTimeout(()=>{
+    const etiquetas=joyas.map(j=>{
+      const c=qrDivs[j.codigo].querySelector('canvas');
+      const src=c?c.toDataURL('image/png'):'';
+      const pf='$'+Number(j.venta).toLocaleString('es-CL');
+      return `<div class="etiq"><img src="${src}"><div class="info"><div class="cod">${j.codigo}</div><div class="prec">${pf}</div></div></div>`;
+    }).join('');
+    document.body.removeChild(tmp);
+    const win=window.open('','_blank');
+    win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+    <style>
+      @page{margin:8mm;size:A4}
+      body{margin:0;font-family:Arial,sans-serif;background:#fff;}
+      .wrap{display:flex;flex-wrap:wrap;gap:2mm;align-content:flex-start;}
+      .etiq{display:inline-flex;flex-direction:row;align-items:center;gap:1.5mm;border:0.2mm solid #ccc;border-radius:1mm;padding:1mm 2mm;width:25mm;height:10mm;box-sizing:border-box;}
+      img{width:8mm;height:8mm;flex-shrink:0;image-rendering:crisp-edges;}
+      .info{display:flex;flex-direction:column;gap:0.8mm;flex:1;}
+      .cod{font-family:monospace;font-size:5pt;color:#555;white-space:nowrap;}
+      .prec{font-size:7.5pt;font-weight:bold;color:#1A1510;white-space:nowrap;}
+    </style></head><body>
+    <div class="wrap">${etiquetas}</div>
+    <script>setTimeout(()=>window.print(),600)<\/script></body></html>`);
+    win.document.close();
+    toast('Imprimiendo '+joyas.length+' etiqueta'+(joyas.length>1?'s':''));
+  },600);
 }
 
 // ══════════════════════════════════════════════════════════
@@ -538,7 +650,10 @@ function showTab(id,btn) {
   if(id==='informe')renderInforme();
   if(id==='etiquetas'){
     document.getElementById('rp-q').value='';
-    document.getElementById('rp-results').innerHTML='<div class="empty">Escribe para buscar una joya</div>';
+    document.getElementById('rp-results').innerHTML='<div class="empty">Escribe para buscar joyas</div>';
+    seleccionados.clear();
+    actualizarBatchBar();
+    document.getElementById('btn-sel-todos').textContent='Seleccionar todos';
   }
 }
 
