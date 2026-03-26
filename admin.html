@@ -280,7 +280,7 @@ tr:hover td { background: var(--gold-pale); }
 
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <script>
-const API = 'https://script.google.com/macros/s/AKfycbyEPZ4Q2tczGhhQ6BsvVsSkf9Zmni5OkDR-ul_vNsSuKFLXN0JCMoyKPbJoJEFQkg/exec';
+const API = 'TU_URL_DE_APPS_SCRIPT'; // ← Pega aquí tu URL de Google Apps Script
 const COMISIONES = { Anillo:30, Collar:25, Pulsera:25, Pendientes:20, Broche:20, Otro:25 };
 let db = [];
 let cargando = false;
@@ -338,7 +338,12 @@ function renderTabla() {
   if(!data.length){tbody.innerHTML='<tr><td colspan="10"><div class="empty">No hay joyas que coincidan</div></td></tr>';return;}
   tbody.innerHTML=data.map(j=>{
     const ing=Math.round(Number(j.venta)*(1-Number(j.comision)/100));
+    const fotoSrc = j.foto ? convertirUrlDrive(j.foto) : '';
+    const fotoHtml = fotoSrc
+      ? `<img class="foto-thumb" src="${fotoSrc}" onclick="abrirModal('${fotoSrc}')" title="Ver foto">`
+      : `<span style="font-size:18px;color:var(--ink-faint);">⬡</span>`;
     return `<tr>
+      <td style="text-align:center;">${fotoHtml}</td>
       <td style="font-family:monospace;font-size:12px;">${j.codigo}</td>
       <td>${j.nombre}${j.material?'<br><span style="font-size:11px;color:var(--ink-soft);">'+j.material+'</span>':''}</td>
       <td>${j.tipo||'—'}</td><td>$${Number(j.costo).toLocaleString('es-CL')}</td>
@@ -393,12 +398,13 @@ async function agregarJoya() {
   const comision=parseFloat(document.getElementById('n-comision').value)||COMISIONES[tipo]||25;
   const material=document.getElementById('n-material').value.trim();
   const notas=document.getElementById('n-notas').value.trim();
+  const foto=window._fotoUrl||document.getElementById('n-fotolink').value.trim()||'';
   const msg=document.getElementById('msg-agregar');
   if(!nombre||!costo||!venta){msg.style.color='var(--red)';msg.textContent='Completa nombre, costo y precio de venta.';return;}
   const btn=document.getElementById('btn-agregar');
   btn.disabled=true;btn.textContent='Guardando…';
   try {
-    const r=await apiPost({action:'addJoya',nombre,tipo,costo,venta,comision,material,notas});
+    const r=await apiPost({action:'addJoya',nombre,tipo,costo,venta,comision,material,notas,foto});
     if(r.ok){msg.style.color='var(--green)';msg.textContent='Joya registrada: '+r.codigo;mostrarQR(r.codigo,nombre,venta);await cargarInventario();}
     else{msg.style.color='var(--red)';msg.textContent=r.msg||'Error al guardar';}
   }catch(e){msg.style.color='var(--red)';msg.textContent='Error de conexión';}
@@ -589,7 +595,11 @@ function imprimirEtiqueta(codigo,nombre,precio) {
 }
 
 function limpiarForm() {
-  ['n-nombre','n-costo','n-venta','n-material','n-notas'].forEach(id=>document.getElementById(id).value='');
+  ['n-nombre','n-costo','n-venta','n-material','n-notas','n-fotolink'].forEach(id=>document.getElementById(id).value='');
+  window._fotoUrl='';
+  document.getElementById('foto-preview').style.display='none';
+  document.getElementById('foto-upload-hint').style.display='block';
+  document.getElementById('foto-file').value='';
   document.getElementById('n-comision').value=30;
   document.getElementById('msg-agregar').textContent='';
   document.getElementById('margen-preview').style.display='none';
@@ -658,12 +668,64 @@ function showTab(id,btn) {
 }
 
 // LOGIN
-const CLAVE='castro2024';
+const CLAVE='TU_CLAVE_AQUI'; // ← Cambia esta clave
 function checkLogin() {
   const v=document.getElementById('login-input').value, e=document.getElementById('login-error');
   if(v===CLAVE){document.getElementById('login-screen').style.display='none';sessionStorage.setItem('joyeria_auth','1');cargarInventario();}
   else{e.style.display='block';document.getElementById('login-input').value='';document.getElementById('login-input').focus();setTimeout(()=>e.style.display='none',3000);}
 }
+
+// ── FOTO ─────────────────────────────────────────────────
+window._fotoUrl = '';
+
+function onFotoFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const prev = document.getElementById('foto-preview');
+    prev.src = ev.target.result;
+    prev.style.display = 'block';
+    document.getElementById('foto-upload-hint').style.display = 'none';
+    document.getElementById('n-fotolink').value = '';
+  };
+  reader.readAsDataURL(file);
+  window._fotoUrl = '';
+  toast('Vista previa cargada. Para guardar permanentemente, sube la foto a Google Drive y pega el link abajo.');
+}
+
+function onFotoLink() {
+  const link = document.getElementById('n-fotolink').value.trim();
+  if (!link) { window._fotoUrl=''; return; }
+  window._fotoUrl = link;
+  const url = convertirUrlDrive(link);
+  const prev = document.getElementById('foto-preview');
+  prev.src = url;
+  prev.style.display = 'block';
+  prev.onerror = () => { prev.style.display='none'; toast('No se pudo cargar la imagen. Verifica que el link sea público.','error'); };
+  document.getElementById('foto-upload-hint').style.display = 'none';
+}
+
+function convertirUrlDrive(url) {
+  if (!url) return '';
+  const m1 = url.match(/\/file\/d\/([^\/\?]+)/);
+  if (m1) return 'https://drive.google.com/thumbnail?id=' + m1[1] + '&sz=w400';
+  const m2 = url.match(/[?&]id=([^&]+)/);
+  if (m2) return 'https://drive.google.com/thumbnail?id=' + m2[1] + '&sz=w400';
+  return url;
+}
+
+function abrirModal(src) {
+  document.getElementById('modal-img-src').src = src;
+  document.getElementById('foto-modal').classList.add('open');
+}
+
+function cerrarModal() {
+  document.getElementById('foto-modal').classList.remove('open');
+  document.getElementById('modal-img-src').src = '';
+}
+
+document.addEventListener('keydown', e => { if(e.key==='Escape') cerrarModal(); });
 
 document.getElementById('n-comision').value=30;
 if(sessionStorage.getItem('joyeria_auth')==='1'){document.getElementById('login-screen').style.display='none';cargarInventario();}
