@@ -668,7 +668,7 @@ function showTab(id,btn) {
 }
 
 // LOGIN
-const CLAVE='TU_CLAVE_AQUI'; // ← Cambia esta clave
+const CLAVE='chiloe'; // ← Cambia esta clave
 function checkLogin() {
   const v=document.getElementById('login-input').value, e=document.getElementById('login-error');
   if(v===CLAVE){document.getElementById('login-screen').style.display='none';sessionStorage.setItem('joyeria_auth','1');cargarInventario();}
