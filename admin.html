@@ -443,11 +443,7 @@ async function agregarJoya() {
   const comision = parseFloat(document.getElementById('n-comision').value) || COMISIONES[tipo] || 25;
   const material = document.getElementById('n-material').value.trim();
   const notas = document.getElementById('n-notas').value.trim();
-  
-  // ← AQUÍ: asegurar que toma la foto correctamente
   const foto = window._fotoUrl || document.getElementById('n-fotolink').value.trim() || '';
-  
-  console.log('Foto a enviar:', foto); // Debug en navegador
   
   const msg = document.getElementById('msg-agregar');
   
@@ -459,36 +455,27 @@ async function agregarJoya() {
   
   const btn = document.getElementById('btn-agregar');
   btn.disabled = true;
-  btn.textContent = 'Guardando…';
+  btn.textContent = 'Guardando...';
   
   try {
     const r = await apiPost({
       action: 'addJoya',
-      nombre,
-      tipo,
-      costo,
-      venta,
-      comision,
-      material,
-      notas,
-      foto  // ← Se envía explícitamente
+      nombre, tipo, costo, venta, comision, material, notas, foto
     });
-    
-    console.log('Respuesta servidor:', r); // Debug
     
     if (r.ok) {
       msg.style.color = 'var(--green)';
-      msg.textContent = 'Joya registrada: ' + r.codigo + (r.fotoGuardada ? ' (con foto)' : ' (sin foto)');
+      msg.textContent = '✓ Joya guardada: ' + r.codigo + (foto ? ' (con foto)' : ' (sin foto)');
       mostrarQR(r.codigo, nombre, venta);
       await cargarInventario();
+      window._fotoUrl = ''; // Limpiar para siguiente
     } else {
       msg.style.color = 'var(--red)';
       msg.textContent = r.msg || 'Error al guardar';
     }
   } catch (e) {
     msg.style.color = 'var(--red)';
-    msg.textContent = 'Error de conexión: ' + e.message;
-    console.error(e);
+    msg.textContent = 'Error de conexión';
   }
   
   btn.disabled = false;
@@ -679,17 +666,21 @@ function imprimirEtiqueta(codigo,nombre,precio) {
 }
 
 function limpiarForm() {
-  ['n-nombre','n-costo','n-venta','n-material','n-notas','n-fotolink'].forEach(id=>document.getElementById(id).value='');
-  window._fotoUrl='';
-  document.getElementById('foto-preview').style.display='none';
-  document.getElementById('foto-upload-hint').style.display='block';
-  document.getElementById('foto-upload-status').style.display='none';
-  document.getElementById('foto-upload-status').textContent='';
-  document.getElementById('foto-file').value='';
-  document.getElementById('n-comision').value=30;
-  document.getElementById('msg-agregar').textContent='';
-  document.getElementById('margen-preview').style.display='none';
-  document.getElementById('qr-card').style.display='none';
+  ['n-nombre', 'n-costo', 'n-venta', 'n-material', 'n-notas', 'n-fotolink'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  
+  window._fotoUrl = ''; // ← LIMPIAR FOTO GLOBAL
+  
+  document.getElementById('foto-preview').style.display = 'none';
+  document.getElementById('foto-upload-hint').style.display = 'block';
+  document.getElementById('foto-upload-status').style.display = 'none';
+  document.getElementById('foto-file').value = '';
+  
+  document.getElementById('n-comision').value = 30;
+  document.getElementById('msg-agregar').textContent = '';
+  document.getElementById('margen-preview').style.display = 'none';
+  document.getElementById('qr-card').style.display = 'none';
 }
 
 // ══════════════════════════════════════════════════════════
@@ -785,12 +776,15 @@ async function onFotoFile(e) {
   };
   reader.readAsDataURL(file);
 
-  // Subir a Drive via Apps Script
-  const hint = document.getElementById('foto-upload-hint');
-  const uploadBtn = document.getElementById('foto-upload-status');
-  uploadBtn.style.display = 'block';
-  uploadBtn.textContent = '⏳ Subiendo foto a Drive...';
-  uploadBtn.style.color = 'var(--ink-soft)';
+  // BLOQUEAR BOTÓN DE GUARDAR MIENTRAS SUBE LA FOTO
+  const btnAgregar = document.getElementById('btn-agregar');
+  const uploadStatus = document.getElementById('foto-upload-status');
+  
+  btnAgregar.disabled = true;
+  btnAgregar.textContent = '⏳ Esperando foto...';
+  uploadStatus.style.display = 'block';
+  uploadStatus.textContent = 'Subiendo a Drive...';
+  uploadStatus.style.color = 'var(--ink-soft)';
 
   try {
     // Convertir a base64
@@ -807,18 +801,25 @@ async function onFotoFile(e) {
     if (r.ok) {
       window._fotoUrl = r.url;
       document.getElementById('n-fotolink').value = r.url;
-      uploadBtn.textContent = '✓ Foto guardada en Google Drive';
-      uploadBtn.style.color = 'var(--green)';
+      
+      uploadStatus.textContent = '✓ Foto lista';
+      uploadStatus.style.color = 'var(--green)';
       toast('Foto subida correctamente a Drive');
+      
+      // DESBLOQUEAR BOTÓN - foto lista para guardar
+      btnAgregar.disabled = false;
+      btnAgregar.textContent = 'Agregar al inventario';
     } else {
-      uploadBtn.textContent = '✗ Error al subir: ' + (r.msg || 'intenta de nuevo');
-      uploadBtn.style.color = 'var(--red)';
-      toast('Error al subir la foto', 'error');
+      throw new Error(r.msg || 'Error al subir');
     }
   } catch(err) {
-    uploadBtn.textContent = '✗ Sin conexión al subir foto';
-    uploadBtn.style.color = 'var(--red)';
-    toast('Error de conexión', 'error');
+    uploadStatus.textContent = '✗ Error: ' + (err.message || 'Sin conexión');
+    uploadStatus.style.color = 'var(--red)';
+    toast('Error al subir la foto', 'error');
+    
+    // DESBLOQUEAR IGUAL (puede guardar sin foto)
+    btnAgregar.disabled = false;
+    btnAgregar.textContent = 'Agregar al inventario';
   }
 }
 
