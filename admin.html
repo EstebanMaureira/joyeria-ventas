@@ -406,24 +406,63 @@ function calcMargen() {
 }
 
 async function agregarJoya() {
-  const nombre=document.getElementById('n-nombre').value.trim();
-  const tipo=document.getElementById('n-tipo').value;
-  const costo=parseFloat(document.getElementById('n-costo').value)||0;
-  const venta=parseFloat(document.getElementById('n-venta').value)||0;
-  const comision=parseFloat(document.getElementById('n-comision').value)||COMISIONES[tipo]||25;
-  const material=document.getElementById('n-material').value.trim();
-  const notas=document.getElementById('n-notas').value.trim();
-  const foto=window._fotoUrl||document.getElementById('n-fotolink').value.trim()||'';
-  const msg=document.getElementById('msg-agregar');
-  if(!nombre||!costo||!venta){msg.style.color='var(--red)';msg.textContent='Completa nombre, costo y precio de venta.';return;}
-  const btn=document.getElementById('btn-agregar');
-  btn.disabled=true;btn.textContent='Guardando…';
+  const nombre = document.getElementById('n-nombre').value.trim();
+  const tipo = document.getElementById('n-tipo').value;
+  const costo = parseFloat(document.getElementById('n-costo').value) || 0;
+  const venta = parseFloat(document.getElementById('n-venta').value) || 0;
+  const comision = parseFloat(document.getElementById('n-comision').value) || COMISIONES[tipo] || 25;
+  const material = document.getElementById('n-material').value.trim();
+  const notas = document.getElementById('n-notas').value.trim();
+  
+  // ← AQUÍ: asegurar que toma la foto correctamente
+  const foto = window._fotoUrl || document.getElementById('n-fotolink').value.trim() || '';
+  
+  console.log('Foto a enviar:', foto); // Debug en navegador
+  
+  const msg = document.getElementById('msg-agregar');
+  
+  if (!nombre || !costo || !venta) {
+    msg.style.color = 'var(--red)';
+    msg.textContent = 'Completa nombre, costo y precio de venta.';
+    return;
+  }
+  
+  const btn = document.getElementById('btn-agregar');
+  btn.disabled = true;
+  btn.textContent = 'Guardando…';
+  
   try {
-    const r=await apiPost({action:'addJoya',nombre,tipo,costo,venta,comision,material,notas,foto});
-    if(r.ok){msg.style.color='var(--green)';msg.textContent='Joya registrada: '+r.codigo;mostrarQR(r.codigo,nombre,venta);await cargarInventario();}
-    else{msg.style.color='var(--red)';msg.textContent=r.msg||'Error al guardar';}
-  }catch(e){msg.style.color='var(--red)';msg.textContent='Error de conexión';}
-  btn.disabled=false;btn.textContent='Agregar al inventario';
+    const r = await apiPost({
+      action: 'addJoya',
+      nombre,
+      tipo,
+      costo,
+      venta,
+      comision,
+      material,
+      notas,
+      foto  // ← Se envía explícitamente
+    });
+    
+    console.log('Respuesta servidor:', r); // Debug
+    
+    if (r.ok) {
+      msg.style.color = 'var(--green)';
+      msg.textContent = 'Joya registrada: ' + r.codigo + (r.fotoGuardada ? ' (con foto)' : ' (sin foto)');
+      mostrarQR(r.codigo, nombre, venta);
+      await cargarInventario();
+    } else {
+      msg.style.color = 'var(--red)';
+      msg.textContent = r.msg || 'Error al guardar';
+    }
+  } catch (e) {
+    msg.style.color = 'var(--red)';
+    msg.textContent = 'Error de conexión: ' + e.message;
+    console.error(e);
+  }
+  
+  btn.disabled = false;
+  btn.textContent = 'Agregar al inventario';
 }
 
 // ══════════════════════════════════════════════════════════
