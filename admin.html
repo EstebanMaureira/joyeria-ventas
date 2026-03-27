@@ -195,7 +195,19 @@ tr:hover td { background: var(--gold-pale); }
       <div class="table-wrap">
         <table>
           <thead>
-            <tr><th>Código</th><th>Nombre</th><th>Tipo</th><th>Costo</th><th>Precio venta</th><th>Comisión</th><th>Tu ingreso</th><th>Estado</th><th>Fecha ingreso</th><th>Acciones</th></tr>
+            <tr>
+              <th style="width:50px;">Foto</th>  <!-- ← NUEVA -->
+              <th>Código</th>
+              <th>Nombre</th>
+              <th>Tipo</th>
+              <th>Costo</th>
+              <th>Precio venta</th>
+              <th>Comisión</th>
+              <th>Tu ingreso</th>
+              <th>Estado</th>
+              <th>Fecha ingreso</th>
+              <th>Acciones</th>
+            </tr>
           </thead>
           <tbody id="tabla-body">
             <tr><td colspan="10"><div class="loading"><span class="spinner"></span>Cargando inventario…</div></td></tr>
@@ -342,34 +354,52 @@ function renderFiltros() {
 }
 
 function renderTabla() {
-  const q=(document.getElementById('q-search').value||'').toLowerCase();
-  const est=document.getElementById('q-estado').value;
-  const tipo=document.getElementById('q-tipo').value;
-  const data=db.filter(j=>{
-    const mQ=!q||(j.codigo||'').toLowerCase().includes(q)||(j.nombre||'').toLowerCase().includes(q)||(j.tipo||'').toLowerCase().includes(q);
-    return mQ&&(!est||j.estado===est)&&(!tipo||j.tipo===tipo);
+  const q = (document.getElementById('q-search').value || '').toLowerCase();
+  const est = document.getElementById('q-estado').value;
+  const tipo = document.getElementById('q-tipo').value;
+  
+  const data = db.filter(j => {
+    const mQ = !q || 
+      (j.codigo || '').toLowerCase().includes(q) ||
+      (j.nombre || '').toLowerCase().includes(q) ||
+      (j.tipo || '').toLowerCase().includes(q);
+    return mQ && (!est || j.estado === est) && (!tipo || j.tipo === tipo);
   });
-  const tbody=document.getElementById('tabla-body');
-  if(!data.length){tbody.innerHTML='<tr><td colspan="10"><div class="empty">No hay joyas que coincidan</div></td></tr>';return;}
-  tbody.innerHTML=data.map(j=>{
-    const ing=Math.round(Number(j.venta)*(1-Number(j.comision)/100));
-    const fotoSrc = j.foto ? convertirUrlDrive(j.foto) : '';
-    const fotoHtml = fotoSrc
-      ? `<img class="foto-thumb" src="${fotoSrc}" onclick="abrirModal('${fotoSrc}')" title="Ver foto">`
-      : `<span style="font-size:18px;color:var(--ink-faint);">⬡</span>`;
+  
+  const tbody = document.getElementById('tabla-body');
+  
+  if (!data.length) {
+    tbody.innerHTML = '<tr><td colspan="11"><div class="empty">No hay joyas que coincidan</div></td></tr>';
+    return;
+  }
+  
+  tbody.innerHTML = data.map(j => {
+    const ing = Math.round(Number(j.venta) * (1 - Number(j.comision) / 100));
+    
+    // Miniatura de foto (columna nueva)
+    const fotoHtml = j.foto 
+      ? `<img src="${j.foto}" 
+              style="width:42px;height:42px;object-fit:cover;border-radius:6px;border:1px solid var(--ink-faint);cursor:pointer;" 
+              onclick="verFotoGrande('${j.foto}', '${j.nombre.replace(/'/g, "\\'")}')"
+              onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2242%22 height=%2242%22><rect fill=%22%23E8E0D5%22 width=%2242%22 height=%2242%22/><text x=%2221%22 y=%2226%22 text-anchor=%22middle%22 fill=%22%238C7D6E%22 font-size=%2220%22>💎</text></svg>'">`
+      : `<div style="width:42px;height:42px;background:var(--ink-faint);border-radius:6px;display:flex;align-items:center;justify-content:center;color:var(--ink-soft);font-size:20px;">💎</div>`;
+    
     return `<tr>
-      <td style="text-align:center;">${fotoHtml}</td>
+      <td style="padding:8px;">${fotoHtml}</td>
       <td style="font-family:monospace;font-size:12px;">${j.codigo}</td>
-      <td>${j.nombre}${j.material?'<br><span style="font-size:11px;color:var(--ink-soft);">'+j.material+'</span>':''}</td>
-      <td>${j.tipo||'—'}</td><td>$${Number(j.costo).toLocaleString('es-CL')}</td>
-      <td>$${Number(j.venta).toLocaleString('es-CL')}</td><td>${j.comision}%</td>
+      <td>${j.nombre}${j.material ? '<br><span style="font-size:11px;color:var(--ink-soft);">' + j.material + '</span>' : ''}</td>
+      <td>${j.tipo || '—'}</td>
+      <td>$${Number(j.costo).toLocaleString('es-CL')}</td>
+      <td>$${Number(j.venta).toLocaleString('es-CL')}</td>
+      <td>${j.comision}%</td>
       <td style="color:var(--green);font-weight:500;">$${ing.toLocaleString('es-CL')}</td>
-      <td><span class="badge ${j.estado}">${j.estado==='en-stock'?'En stock':'Vendida'}</span></td>
-      <td style="color:var(--ink-soft);font-size:12px;">${j.fechaIngreso||'—'}</td>
+      <td><span class="badge ${j.estado}">${j.estado === 'en-stock' ? 'En stock' : 'Vendida'}</span></td>
+      <td style="color:var(--ink-soft);font-size:12px;">${j.fechaIngreso || '—'}</td>
       <td style="white-space:nowrap;">
-        ${j.estado==='en-stock'?`<button class="btn green sm" onclick="venderDirecto('${j.codigo}')">Vender</button> `:''}
+        ${j.estado === 'en-stock' ? `<button class="btn green sm" onclick="venderDirecto('${j.codigo}')">Vender</button> ` : ''}
         <button class="btn danger sm" onclick="eliminar('${j.codigo}')">Eliminar</button>
-      </td></tr>`;
+      </td>
+    </tr>`;
   }).join('');
 }
 
@@ -826,21 +856,76 @@ function convertirUrlDrive(url) {
   return url;
 }
 
-function abrirModal(src) {
-  document.getElementById('modal-img-src').src = src;
-  document.getElementById('foto-modal').classList.add('open');
+
+
+// ══════════════════════════════════════════════════════════
+// MODAL DE FOTO GRANDE (inventario)
+// ══════════════════════════════════════════════════════════
+
+function verFotoGrande(url, nombre) {
+  if (!url) return;
+  
+  const modal = document.getElementById('modal-foto');
+  const img = document.getElementById('modal-foto-img');
+  const titulo = document.getElementById('modal-foto-titulo');
+  const link = document.getElementById('modal-foto-link');
+  
+  // Convertir thumbnail a imagen grande
+  const urlGrande = url.replace(/sz=w\d+/, 'sz=w800');
+  
+  img.src = urlGrande;
+  titulo.textContent = nombre || 'Foto de joya';
+  link.href = urlGrande;
+  
+  modal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
 }
 
-function cerrarModal() {
-  document.getElementById('foto-modal').classList.remove('open');
-  document.getElementById('modal-img-src').src = '';
+function cerrarModalFoto() {
+  const modal = document.getElementById('modal-foto');
+  modal.style.display = 'none';
+  document.body.style.overflow = '';
+  document.getElementById('modal-foto-img').src = '';
 }
 
-document.addEventListener('keydown', e => { if(e.key==='Escape') cerrarModal(); });
+// Cerrar modales con ESC (solo uno)
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    cerrarModalFoto();
+    // Si tienes otros modales, agrégalos aquí:
+    // cerrarOtroModal();
+  }
+});
 
-document.getElementById('n-comision').value=30;
-if(sessionStorage.getItem('joyeria_auth')==='1'){document.getElementById('login-screen').style.display='none';cargarInventario();}
-else setTimeout(()=>document.getElementById('login-input').focus(),300);
+// ══════════════════════════════════════════════════════════
+// INICIALIZACIÓN
+// ══════════════════════════════════════════════════════════
+
+document.getElementById('n-comision').value = 30;
+
+if (sessionStorage.getItem('joyeria_auth') === '1') {
+  document.getElementById('login-screen').style.display = 'none';
+  cargarInventario();
+} else {
+  setTimeout(() => document.getElementById('login-input').focus(), 300);
+}
 </script>
+
+<!-- Modal para ver foto grande -->
+<div id="modal-foto" style="display:none;position:fixed;inset:0;background:rgba(26,21,16,0.9);z-index:10000;align-items:center;justify-content:center;padding:20px;" onclick="cerrarModalFoto()">
+  <div style="background:var(--white);border-radius:var(--radius);max-width:90vw;max-height:90vh;overflow:hidden;position:relative;" onclick="event.stopPropagation()">
+    <div style="padding:16px 20px;border-bottom:0.5px solid var(--ink-faint);display:flex;justify-content:space-between;align-items:center;">
+      <span id="modal-foto-titulo" style="font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;"></span>
+      <button onclick="cerrarModalFoto()" style="background:none;border:none;font-size:24px;color:var(--ink-soft);cursor:pointer;">&times;</button>
+    </div>
+    <div style="padding:20px;display:flex;justify-content:center;background:var(--surface);">
+      <img id="modal-foto-img" style="max-width:80vw;max-height:70vh;object-fit:contain;border-radius:var(--radius-sm);">
+    </div>
+    <div style="padding:12px 20px;border-top:0.5px solid var(--ink-faint);text-align:center;">
+      <a id="modal-foto-link" href="#" target="_blank" style="color:var(--gold);font-size:12px;text-decoration:none;">Abrir imagen original →</a>
+    </div>
+  </div>
+</div> 
+
 </body>
 </html>
