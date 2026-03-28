@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Gestión Joyería — Admin</title>
+<title>Gestión CAPT Joyas — Admin</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -147,7 +147,7 @@ tr:hover td { background: var(--gold-pale); }
 
 <div class="login-screen" id="login-screen">
   <div class="login-box">
-    <div class="login-logo">JOYERÍA</div>
+    <div class="login-logo">CAPT Joyas</div>
     <div class="login-sub">Panel de administración</div>
     <label class="login-label">Clave de acceso</label>
     <input class="login-input" id="login-input" type="password" placeholder="Ingresa tu clave"
@@ -159,7 +159,7 @@ tr:hover td { background: var(--gold-pale); }
 </div>
 
 <div class="header">
-  <div class="logo">JOYERÍA</div>
+  <div class="logo">CAPT Joyas</div>
   <button class="sync-btn" onclick="cargarInventario()">↻ Sincronizar</button>
 </div>
 
@@ -195,7 +195,19 @@ tr:hover td { background: var(--gold-pale); }
       <div class="table-wrap">
         <table>
           <thead>
-            <tr><th>Código</th><th>Nombre</th><th>Tipo</th><th>Costo</th><th>Precio venta</th><th>Comisión</th><th>Tu ingreso</th><th>Estado</th><th>Fecha ingreso</th><th>Acciones</th></tr>
+            <tr>
+              <th style="width:50px;">Foto</th>  <!-- ← NUEVA -->
+              <th>Código</th>
+              <th>Nombre</th>
+              <th>Tipo</th>
+              <th>Costo</th>
+              <th>Precio venta</th>
+              <th>Comisión</th>
+              <th>Tu ingreso</th>
+              <th>Estado</th>
+              <th>Fecha ingreso</th>
+              <th>Acciones</th>
+            </tr>
           </thead>
           <tbody id="tabla-body">
             <tr><td colspan="10"><div class="loading"><span class="spinner"></span>Cargando inventario…</div></td></tr>
@@ -223,6 +235,21 @@ tr:hover td { background: var(--gold-pale); }
         <div class="form-group"><label>% Comisión joyería</label><input type="number" id="n-comision" placeholder="30" min="0" max="100" oninput="calcMargen()"></div>
         <div class="form-group"><label>Material</label><input type="text" id="n-material" placeholder="Ej: Oro 18k, Plata 925"></div>
         <div class="form-group full"><label>Notas (opcional)</label><input type="text" id="n-notas" placeholder="Detalles adicionales"></div>
+        <div class="form-group full">
+          <label>Foto de la joya (opcional)</label>
+          <div style="border:1.5px dashed var(--ink-faint);border-radius:var(--radius-sm);padding:14px;text-align:center;background:var(--surface);position:relative;cursor:pointer;" onclick="document.getElementById('foto-file').click()">
+            <input type="file" id="foto-file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;" onchange="onFotoFile(event)">
+            <div id="foto-upload-hint" style="font-size:13px;color:var(--ink-soft);">📷 Haz clic para seleccionar una foto — se subirá automáticamente a Google Drive</div>
+            <img id="foto-preview" style="width:100%;max-height:160px;object-fit:cover;border-radius:var(--radius-sm);display:none;margin-top:8px;">
+            <div id="foto-upload-status" style="display:none;font-size:12px;margin-top:6px;font-weight:500;"></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:8px;">
+            <span style="font-size:11px;color:var(--ink-soft);white-space:nowrap;">O pega link de Google Drive:</span>
+            <input type="text" id="n-fotolink" placeholder="https://drive.google.com/file/d/..." oninput="onFotoLink()"
+              style="flex:1;padding:7px 10px;border:0.5px solid var(--ink-faint);border-radius:var(--radius-sm);font-size:12px;background:var(--surface);color:var(--ink);font-family:'DM Sans',sans-serif;">
+          </div>
+          <div style="font-size:11px;color:var(--ink-soft);margin-top:4px;">Para Drive: abre la foto → clic derecho → "Obtener enlace" → acceso <strong>"Cualquiera con el enlace"</strong></div>
+        </div>
       </div>
       <div id="margen-preview" style="display:none;margin-top:12px;padding:10px 14px;background:var(--gold-pale);border:0.5px solid var(--gold-light);border-radius:var(--radius-sm);font-size:13px;color:var(--ink-mid);"></div>
       <div style="display:flex;gap:8px;margin-top:1rem;">
@@ -270,7 +297,11 @@ tr:hover td { background: var(--gold-pale); }
   <div class="section" id="tab-informe">
     <div class="mes-row">
       <select class="mes-sel" id="sel-mes" onchange="renderInforme()"></select>
-      <button class="btn gold" onclick="exportarCSV()">Exportar CSV</button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn" onclick="exportarInventarioCSV()">📥 Inventario</button>
+        <button class="btn" onclick="exportarVentasCSV()">📥 Ventas</button>
+        <button class="btn gold" onclick="exportarCSV()">Exportar Mes</button>
+      </div>
     </div>
     <div id="informe-contenido"><div class="loading"><span class="spinner"></span>Cargando…</div></div>
   </div>
@@ -280,7 +311,7 @@ tr:hover td { background: var(--gold-pale); }
 
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <script>
-const API = 'TU_URL_DE_APPS_SCRIPT'; // ← Pega aquí tu URL de Google Apps Script
+const API = 'https://script.google.com/macros/s/AKfycbz2O4esD3cRxVC3fWB5kxQK1RJ4aK0EPvRCabrai22S0zRnmDe5oAGWkUSbnWsd9LO6/exec'; // ← Pega aquí tu URL de Google Apps Script
 const COMISIONES = { Anillo:30, Collar:25, Pulsera:25, Pendientes:20, Broche:20, Otro:25 };
 let db = [];
 let cargando = false;
@@ -327,34 +358,52 @@ function renderFiltros() {
 }
 
 function renderTabla() {
-  const q=(document.getElementById('q-search').value||'').toLowerCase();
-  const est=document.getElementById('q-estado').value;
-  const tipo=document.getElementById('q-tipo').value;
-  const data=db.filter(j=>{
-    const mQ=!q||(j.codigo||'').toLowerCase().includes(q)||(j.nombre||'').toLowerCase().includes(q)||(j.tipo||'').toLowerCase().includes(q);
-    return mQ&&(!est||j.estado===est)&&(!tipo||j.tipo===tipo);
+  const q = (document.getElementById('q-search').value || '').toLowerCase();
+  const est = document.getElementById('q-estado').value;
+  const tipo = document.getElementById('q-tipo').value;
+  
+  const data = db.filter(j => {
+    const mQ = !q || 
+      (j.codigo || '').toLowerCase().includes(q) ||
+      (j.nombre || '').toLowerCase().includes(q) ||
+      (j.tipo || '').toLowerCase().includes(q);
+    return mQ && (!est || j.estado === est) && (!tipo || j.tipo === tipo);
   });
-  const tbody=document.getElementById('tabla-body');
-  if(!data.length){tbody.innerHTML='<tr><td colspan="10"><div class="empty">No hay joyas que coincidan</div></td></tr>';return;}
-  tbody.innerHTML=data.map(j=>{
-    const ing=Math.round(Number(j.venta)*(1-Number(j.comision)/100));
-    const fotoSrc = j.foto ? convertirUrlDrive(j.foto) : '';
-    const fotoHtml = fotoSrc
-      ? `<img class="foto-thumb" src="${fotoSrc}" onclick="abrirModal('${fotoSrc}')" title="Ver foto">`
-      : `<span style="font-size:18px;color:var(--ink-faint);">⬡</span>`;
+  
+  const tbody = document.getElementById('tabla-body');
+  
+  if (!data.length) {
+    tbody.innerHTML = '<tr><td colspan="11"><div class="empty">No hay joyas que coincidan</div></td></tr>';
+    return;
+  }
+  
+  tbody.innerHTML = data.map(j => {
+    const ing = Math.round(Number(j.venta) * (1 - Number(j.comision) / 100));
+    
+    // Miniatura de foto (columna nueva)
+    const fotoHtml = j.foto 
+      ? `<img src="${j.foto}" 
+              style="width:42px;height:42px;object-fit:cover;border-radius:6px;border:1px solid var(--ink-faint);cursor:pointer;" 
+              onclick="verFotoGrande('${j.foto}', '${j.nombre.replace(/'/g, "\\'")}')"
+              onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2242%22 height=%2242%22><rect fill=%22%23E8E0D5%22 width=%2242%22 height=%2242%22/><text x=%2221%22 y=%2226%22 text-anchor=%22middle%22 fill=%22%238C7D6E%22 font-size=%2220%22>💎</text></svg>'">`
+      : `<div style="width:42px;height:42px;background:var(--ink-faint);border-radius:6px;display:flex;align-items:center;justify-content:center;color:var(--ink-soft);font-size:20px;">💎</div>`;
+    
     return `<tr>
-      <td style="text-align:center;">${fotoHtml}</td>
+      <td style="padding:8px;">${fotoHtml}</td>
       <td style="font-family:monospace;font-size:12px;">${j.codigo}</td>
-      <td>${j.nombre}${j.material?'<br><span style="font-size:11px;color:var(--ink-soft);">'+j.material+'</span>':''}</td>
-      <td>${j.tipo||'—'}</td><td>$${Number(j.costo).toLocaleString('es-CL')}</td>
-      <td>$${Number(j.venta).toLocaleString('es-CL')}</td><td>${j.comision}%</td>
+      <td>${j.nombre}${j.material ? '<br><span style="font-size:11px;color:var(--ink-soft);">' + j.material + '</span>' : ''}</td>
+      <td>${j.tipo || '—'}</td>
+      <td>$${Number(j.costo).toLocaleString('es-CL')}</td>
+      <td>$${Number(j.venta).toLocaleString('es-CL')}</td>
+      <td>${j.comision}%</td>
       <td style="color:var(--green);font-weight:500;">$${ing.toLocaleString('es-CL')}</td>
-      <td><span class="badge ${j.estado}">${j.estado==='en-stock'?'En stock':'Vendida'}</span></td>
-      <td style="color:var(--ink-soft);font-size:12px;">${j.fechaIngreso||'—'}</td>
+      <td><span class="badge ${j.estado}">${j.estado === 'en-stock' ? 'En stock' : 'Vendida'}</span></td>
+      <td style="color:var(--ink-soft);font-size:12px;">${j.fechaIngreso || '—'}</td>
       <td style="white-space:nowrap;">
-        ${j.estado==='en-stock'?`<button class="btn green sm" onclick="venderDirecto('${j.codigo}')">Vender</button> `:''}
+        ${j.estado === 'en-stock' ? `<button class="btn green sm" onclick="venderDirecto('${j.codigo}')">Vender</button> ` : ''}
         <button class="btn danger sm" onclick="eliminar('${j.codigo}')">Eliminar</button>
-      </td></tr>`;
+      </td>
+    </tr>`;
   }).join('');
 }
 
@@ -391,24 +440,73 @@ function calcMargen() {
 }
 
 async function agregarJoya() {
-  const nombre=document.getElementById('n-nombre').value.trim();
-  const tipo=document.getElementById('n-tipo').value;
-  const costo=parseFloat(document.getElementById('n-costo').value)||0;
-  const venta=parseFloat(document.getElementById('n-venta').value)||0;
-  const comision=parseFloat(document.getElementById('n-comision').value)||COMISIONES[tipo]||25;
-  const material=document.getElementById('n-material').value.trim();
-  const notas=document.getElementById('n-notas').value.trim();
-  const foto=window._fotoUrl||document.getElementById('n-fotolink').value.trim()||'';
-  const msg=document.getElementById('msg-agregar');
-  if(!nombre||!costo||!venta){msg.style.color='var(--red)';msg.textContent='Completa nombre, costo y precio de venta.';return;}
-  const btn=document.getElementById('btn-agregar');
-  btn.disabled=true;btn.textContent='Guardando…';
+  const nombre = document.getElementById('n-nombre').value.trim();
+  const tipo = document.getElementById('n-tipo').value;
+  const costo = parseFloat(document.getElementById('n-costo').value) || 0;
+  const venta = parseFloat(document.getElementById('n-venta').value) || 0;
+  const comision = parseFloat(document.getElementById('n-comision').value) || COMISIONES[tipo] || 25;
+  const material = document.getElementById('n-material').value.trim();
+  const notas = document.getElementById('n-notas').value.trim();
+  
+  const msg = document.getElementById('msg-agregar');
+  
+  // 🚨 BLOQUEO CRÍTICO: Si está subiendo foto, no permitir guardar
+  if (window._subiendoFoto === true) {
+    msg.style.color = 'var(--amber)';
+    msg.textContent = '⏳ Espera a que termine de subir la foto...';
+    toast('Espera a que termine la subida de la foto', 'error');
+    return; // <- SALE DE LA FUNCIÓN, NO GUARDA NADA
+  }
+  
+  // Obtener foto solo si no está subiendo
+  const foto = window._fotoUrl || document.getElementById('n-fotolink').value.trim() || '';
+  
+  if (!nombre || !costo || !venta) {
+    msg.style.color = 'var(--red)';
+    msg.textContent = 'Completa nombre, costo y precio de venta.';
+    return;
+  }
+  
+  const btn = document.getElementById('btn-agregar');
+  btn.disabled = true;
+  btn.textContent = 'Guardando en inventario...';
+  
   try {
-    const r=await apiPost({action:'addJoya',nombre,tipo,costo,venta,comision,material,notas,foto});
-    if(r.ok){msg.style.color='var(--green)';msg.textContent='Joya registrada: '+r.codigo;mostrarQR(r.codigo,nombre,venta);await cargarInventario();}
-    else{msg.style.color='var(--red)';msg.textContent=r.msg||'Error al guardar';}
-  }catch(e){msg.style.color='var(--red)';msg.textContent='Error de conexión';}
-  btn.disabled=false;btn.textContent='Agregar al inventario';
+    console.log('Enviando foto al servidor:', foto || 'SIN FOTO');
+    
+    const r = await apiPost({
+      action: 'addJoya',
+      nombre, 
+      tipo, 
+      costo, 
+      venta, 
+      comision, 
+      material, 
+      notas, 
+      foto
+    });
+    
+    if (r.ok) {
+      msg.style.color = 'var(--green)';
+      msg.textContent = '✓ ' + r.codigo + (foto ? ' guardada con foto' : ' guardada sin foto');
+      mostrarQR(r.codigo, nombre, venta);
+      await cargarInventario();
+      
+      // Limpiar foto global para siguiente joya
+      window._fotoUrl = '';
+      document.getElementById('n-fotolink').value = '';
+    } else {
+      msg.style.color = 'var(--red)';
+      msg.textContent = r.msg || 'Error al guardar';
+    }
+  } catch (e) {
+    msg.style.color = 'var(--red)';
+    msg.textContent = 'Error de conexión al guardar';
+    console.error(e);
+  }
+  
+  btn.disabled = false;
+  btn.textContent = 'Agregar al inventario';
 }
 
 // ══════════════════════════════════════════════════════════
@@ -595,15 +693,32 @@ function imprimirEtiqueta(codigo,nombre,precio) {
 }
 
 function limpiarForm() {
-  ['n-nombre','n-costo','n-venta','n-material','n-notas','n-fotolink'].forEach(id=>document.getElementById(id).value='');
-  window._fotoUrl='';
-  document.getElementById('foto-preview').style.display='none';
-  document.getElementById('foto-upload-hint').style.display='block';
-  document.getElementById('foto-file').value='';
-  document.getElementById('n-comision').value=30;
-  document.getElementById('msg-agregar').textContent='';
-  document.getElementById('margen-preview').style.display='none';
-  document.getElementById('qr-card').style.display='none';
+  // Limpiar campos de texto
+  ['n-nombre', 'n-costo', 'n-venta', 'n-material', 'n-notas', 'n-fotolink'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  
+  // 🚨 LIMPIAR ESTADO GLOBAL DE FOTO
+  window._fotoUrl = '';
+  window._subiendoFoto = false; // Resetear estado de subida
+  
+  // Limpiar preview
+  document.getElementById('foto-preview').style.display = 'none';
+  document.getElementById('foto-preview').src = '';
+  document.getElementById('foto-upload-hint').style.display = 'block';
+  document.getElementById('foto-upload-status').style.display = 'none';
+  document.getElementById('foto-file').value = '';
+  
+  // Resetear otros campos
+  document.getElementById('n-comision').value = 30;
+  document.getElementById('msg-agregar').textContent = '';
+  document.getElementById('margen-preview').style.display = 'none';
+  document.getElementById('qr-card').style.display = 'none';
+  
+  // Asegurar que botón esté activo
+  const btn = document.getElementById('btn-agregar');
+  btn.disabled = false;
+  btn.textContent = 'Agregar al inventario';
 }
 
 // ══════════════════════════════════════════════════════════
@@ -668,7 +783,7 @@ function showTab(id,btn) {
 }
 
 // LOGIN
-const CLAVE='TU_CLAVE_AQUI'; // ← Cambia esta clave
+const CLAVE='chiloe2026'; // ← Cambia esta clave
 function checkLogin() {
   const v=document.getElementById('login-input').value, e=document.getElementById('login-error');
   if(v===CLAVE){document.getElementById('login-screen').style.display='none';sessionStorage.setItem('joyeria_auth','1');cargarInventario();}
@@ -678,9 +793,21 @@ function checkLogin() {
 // ── FOTO ─────────────────────────────────────────────────
 window._fotoUrl = '';
 
-function onFotoFile(e) {
+async function onFotoFile(e) {
   const file = e.target.files[0];
   if (!file) return;
+
+  // Validar tamaño (máx 5MB)
+  if (file.size > 5 * 1024 * 1024) {
+    toast('La foto es muy grande. Máximo 5MB.', 'error');
+    return;
+  }
+
+  // 🚨 MARCAR QUE ESTAMOS SUBIENDO FOTO
+  window._subiendoFoto = true;
+  window._fotoUrl = ''; // Limpiar URL anterior mientras sube nueva
+
+  // Mostrar preview inmediato
   const reader = new FileReader();
   reader.onload = ev => {
     const prev = document.getElementById('foto-preview');
@@ -690,8 +817,66 @@ function onFotoFile(e) {
     document.getElementById('n-fotolink').value = '';
   };
   reader.readAsDataURL(file);
-  window._fotoUrl = '';
-  toast('Vista previa cargada. Para guardar permanentemente, sube la foto a Google Drive y pega el link abajo.');
+
+  // Bloquear botón y mostrar estado
+  const btnAgregar = document.getElementById('btn-agregar');
+  const uploadStatus = document.getElementById('foto-upload-status');
+  
+  btnAgregar.disabled = true;
+  btnAgregar.textContent = '⏳ Subiendo foto a Drive...';
+  uploadStatus.style.display = 'block';
+  uploadStatus.textContent = 'Subiendo... por favor espera';
+  uploadStatus.style.color = 'var(--amber)';
+
+  try {
+    const base64 = await fileToBase64(file);
+    const nombre = document.getElementById('n-nombre').value.trim() || 'joya';
+
+    const r = await apiPost({
+      action: 'subirFoto',
+      base64,
+      mimeType: file.type,
+      nombre: nombre.substring(0, 30)
+    });
+
+    if (r.ok) {
+      window._fotoUrl = r.url;
+      document.getElementById('n-fotolink').value = r.url;
+      
+      uploadStatus.textContent = '✓ Foto lista - puedes guardar la joya';
+      uploadStatus.style.color = 'var(--green)';
+      toast('Foto subida correctamente');
+      
+      // Desbloquear botón
+      btnAgregar.disabled = false;
+      btnAgregar.textContent = 'Agregar al inventario';
+    } else {
+      throw new Error(r.msg || 'Error al subir');
+    }
+  } catch(err) {
+    uploadStatus.textContent = '✗ Error al subir foto';
+    uploadStatus.style.color = 'var(--red)';
+    toast('Error al subir la foto', 'error');
+    
+    // Si falla la subida, permitir guardar igual pero sin foto
+    btnAgregar.disabled = false;
+    btnAgregar.textContent = 'Agregar al inventario (sin foto)';
+  } finally {
+    // 🚨 DESMARCAR QUE TERMINAMOS (éxito o error)
+    window._subiendoFoto = false;
+  }
+}
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      // Quitar el prefijo "data:image/jpeg;base64,"
+      const base64 = reader.result.split(',')[1];
+      resolve(base64);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 }
 
 function onFotoLink() {
@@ -715,21 +900,157 @@ function convertirUrlDrive(url) {
   return url;
 }
 
-function abrirModal(src) {
-  document.getElementById('modal-img-src').src = src;
-  document.getElementById('foto-modal').classList.add('open');
+
+
+// ══════════════════════════════════════════════════════════
+// MODAL DE FOTO GRANDE (inventario)
+// ══════════════════════════════════════════════════════════
+
+function verFotoGrande(url, nombre) {
+  if (!url) return;
+  
+  const modal = document.getElementById('modal-foto');
+  const img = document.getElementById('modal-foto-img');
+  const titulo = document.getElementById('modal-foto-titulo');
+  const link = document.getElementById('modal-foto-link');
+  
+  // Convertir thumbnail a imagen grande
+  const urlGrande = url.replace(/sz=w\d+/, 'sz=w800');
+  
+  img.src = urlGrande;
+  titulo.textContent = nombre || 'Foto de joya';
+  link.href = urlGrande;
+  
+  modal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
 }
 
-function cerrarModal() {
-  document.getElementById('foto-modal').classList.remove('open');
-  document.getElementById('modal-img-src').src = '';
+function cerrarModalFoto() {
+  const modal = document.getElementById('modal-foto');
+  modal.style.display = 'none';
+  document.body.style.overflow = '';
+  document.getElementById('modal-foto-img').src = '';
 }
 
-document.addEventListener('keydown', e => { if(e.key==='Escape') cerrarModal(); });
+// Cerrar modales con ESC (solo uno)
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    cerrarModalFoto();
+    // Si tienes otros modales, agrégalos aquí:
+    // cerrarOtroModal();
+  }
+});
 
-document.getElementById('n-comision').value=30;
-if(sessionStorage.getItem('joyeria_auth')==='1'){document.getElementById('login-screen').style.display='none';cargarInventario();}
-else setTimeout(()=>document.getElementById('login-input').focus(),300);
+// ══════════════════════════════════════════════════════════
+// INICIALIZACIÓN
+// ══════════════════════════════════════════════════════════
+
+document.getElementById('n-comision').value = 30;
+
+if (sessionStorage.getItem('joyeria_auth') === '1') {
+  document.getElementById('login-screen').style.display = 'none';
+  cargarInventario();
+} else {
+  setTimeout(() => document.getElementById('login-input').focus(), 300);
+}
+
+// ══════════════════════════════════════════════════════════
+// EXPORTAR INVENTARIO Y VENTAS (sin columna foto)
+// ══════════════════════════════════════════════════════════
+
+function exportarInventarioCSV() {
+  if (!db || db.length === 0) {
+    toast('No hay datos de inventario para exportar', 'error');
+    return;
+  }
+  
+  // Excluir la columna 'foto' de cada registro
+  const datosLimpios = db.map(item => {
+    const { foto, ...resto } = item;
+    return resto;
+  });
+  
+  // Crear CSV
+  const headers = Object.keys(datosLimpios[0]);
+  const csvContent = [
+    headers.join(','),
+    ...datosLimpios.map(row => 
+      headers.map(h => {
+        let val = row[h] || '';
+        // Escapar comillas y envolver en comillas si tiene comas
+        if (typeof val === 'string' && (val.includes(',') || val.includes('"'))) {
+          val = '"' + val.replace(/"/g, '""') + '"';
+        }
+        return val;
+      }).join(',')
+    )
+  ].join('\n');
+  
+  // Descargar
+  const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'CAPT_Joyas_Inventario_' + new Date().toISOString().split('T')[0] + '.csv';
+  link.click();
+  
+  toast('Inventario descargado (sin fotos)', 'ok');
+}
+
+function exportarVentasCSV() {
+  // Obtener datos de ventas desde la hoja Ventas
+  api({ action: 'getVentas' }).then(r => {
+    if (!r.ok || !r.data || r.data.length === 0) {
+      toast('No hay datos de ventas para exportar', 'error');
+      return;
+    }
+    
+    const datos = r.data;
+    const headers = Object.keys(datos[0]);
+    
+    const csvContent = [
+      headers.join(','),
+      ...datos.map(row => 
+        headers.map(h => {
+          let val = row[h] || '';
+          if (typeof val === 'string' && (val.includes(',') || val.includes('"'))) {
+            val = '"' + val.replace(/"/g, '""') + '"';
+          }
+          return val;
+        }).join(',')
+      )
+    ].join('\n');
+    
+    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'CAPT_Joyas_Ventas_' + new Date().toISOString().split('T')[0] + '.csv';
+    link.click();
+    
+    toast('Ventas descargadas', 'ok');
+  }).catch(err => {
+    toast('Error al obtener ventas', 'error');
+    console.error(err);
+  });
+}
+
+  
 </script>
+
+<!-- Modal para ver foto grande -->
+<div id="modal-foto" style="display:none;position:fixed;inset:0;background:rgba(26,21,16,0.9);z-index:10000;align-items:center;justify-content:center;padding:20px;" onclick="cerrarModalFoto()">
+  <div style="background:var(--white);border-radius:var(--radius);max-width:90vw;max-height:90vh;overflow:hidden;position:relative;" onclick="event.stopPropagation()">
+    <div style="padding:16px 20px;border-bottom:0.5px solid var(--ink-faint);display:flex;justify-content:space-between;align-items:center;">
+      <span id="modal-foto-titulo" style="font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;"></span>
+      <button onclick="cerrarModalFoto()" style="background:none;border:none;font-size:24px;color:var(--ink-soft);cursor:pointer;">&times;</button>
+    </div>
+    <div style="padding:20px;display:flex;justify-content:center;background:var(--surface);">
+      <img id="modal-foto-img" style="max-width:80vw;max-height:70vh;object-fit:contain;border-radius:var(--radius-sm);">
+    </div>
+    <div style="padding:12px 20px;border-top:0.5px solid var(--ink-faint);text-align:center;">
+      <a id="modal-foto-link" href="#" target="_blank" style="color:var(--gold);font-size:12px;text-decoration:none;">Abrir imagen original →</a>
+    </div>
+  </div>
+</div> 
+
 </body>
 </html>
