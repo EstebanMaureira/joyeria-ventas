@@ -223,34 +223,7 @@ tr:hover td { background: var(--gold-pale); }
         <div class="form-group"><label>% Comisión joyería</label><input type="number" id="n-comision" placeholder="30" min="0" max="100" oninput="calcMargen()"></div>
         <div class="form-group"><label>Material</label><input type="text" id="n-material" placeholder="Ej: Oro 18k, Plata 925"></div>
         <div class="form-group full"><label>Notas (opcional)</label><input type="text" id="n-notas" placeholder="Detalles adicionales"></div>
-        <div class="form-group full">
-          <label>Foto de la joya (opcional) <span class="ia-badge">✨ IA</span></label>
-          <div style="border:1.5px dashed var(--ink-faint);border-radius:var(--radius-sm);padding:14px;text-align:center;background:var(--surface);position:relative;cursor:pointer;" onclick="document.getElementById('foto-file').click()">
-            <input type="file" id="foto-file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;" onchange="onFotoFile(event)">
-            <div id="foto-upload-hint" style="font-size:13px;color:var(--ink-soft);">📷 Haz clic para seleccionar una foto — se subirá automáticamente a Google Drive</div>
-            <img id="foto-preview" style="width:100%;max-height:160px;object-fit:cover;border-radius:var(--radius-sm);display:none;margin-top:8px;">
-            <div id="foto-upload-status" style="display:none;font-size:12px;margin-top:6px;font-weight:500;"></div>
-          </div>
-          <div style="display:flex;align-items:center;gap:8px;margin-top:8px;">
-            <span style="font-size:11px;color:var(--ink-soft);white-space:nowrap;">O pega link de Google Drive:</span>
-            <input type="text" id="n-fotolink" placeholder="https://drive.google.com/file/d/..." oninput="onFotoLink()"
-              style="flex:1;padding:7px 10px;border:0.5px solid var(--ink-faint);border-radius:var(--radius-sm);font-size:12px;background:var(--surface);color:var(--ink);font-family:'DM Sans',sans-serif;">
-          </div>
-          <div style="font-size:11px;color:var(--ink-soft);margin-top:4px;">Para Drive: abre la foto → clic derecho → "Obtener enlace" → acceso <strong>"Cualquiera con el enlace"</strong></div>
-        </div>
       </div>
-      <!-- PANEL IA -->
-      <div class="ia-panel" id="ia-panel">
-        <div class="ia-panel-title">
-          <span>✨</span> <span>La IA analizó la imagen y sugiere estos valores — revisa y corrige si es necesario</span>
-        </div>
-        <div id="ia-sugerencias" style="font-size:13px;color:var(--ink-mid);margin-bottom:12px;line-height:1.8;"></div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <button class="ia-accept-btn" onclick="aceptarSugerencias()">✓ Aceptar sugerencias</button>
-          <button class="ia-reject-btn" onclick="rechazarSugerencias()">Ignorar y llenar manualmente</button>
-        </div>
-      </div>
-
       <div id="margen-preview" style="display:none;margin-top:12px;padding:10px 14px;background:var(--gold-pale);border:0.5px solid var(--gold-light);border-radius:var(--radius-sm);font-size:13px;color:var(--ink-mid);"></div>
       <div style="display:flex;gap:8px;margin-top:1rem;">
         <button class="btn primary" onclick="agregarJoya()" id="btn-agregar">Agregar al inventario</button>
@@ -307,8 +280,7 @@ tr:hover td { background: var(--gold-pale); }
 
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <script>
-const API = 'https://script.google.com/macros/s/AKfycbyEPZ4Q2tczGhhQ6BsvVsSkf9Zmni5OkDR-ul_vNsSuKFLXN0JCMoyKPbJoJEFQkg/exec';
-const GEMINI_KEY = 'AIzaSyAI6YKZGng0hg-NB5bHk1a5cgpHLNFr21I'; // ← Pega aquí tu URL de Google Apps Script
+const API = 'TU_URL_DE_APPS_SCRIPT'; // ← Pega aquí tu URL de Google Apps Script
 const COMISIONES = { Anillo:30, Collar:25, Pulsera:25, Pendientes:20, Broche:20, Otro:25 };
 let db = [];
 let cargando = false;
@@ -627,11 +599,7 @@ function limpiarForm() {
   window._fotoUrl='';
   document.getElementById('foto-preview').style.display='none';
   document.getElementById('foto-upload-hint').style.display='block';
-  document.getElementById('foto-upload-status').style.display='none';
-  document.getElementById('foto-upload-status').textContent='';
   document.getElementById('foto-file').value='';
-  document.getElementById('ia-panel').style.display='none';
-  _iaData = null;
   document.getElementById('n-comision').value=30;
   document.getElementById('msg-agregar').textContent='';
   document.getElementById('margen-preview').style.display='none';
@@ -700,7 +668,7 @@ function showTab(id,btn) {
 }
 
 // LOGIN
-const CLAVE='joyeria2024'; // ← Cambia esta clave
+const CLAVE='TU_CLAVE_AQUI'; // ← Cambia esta clave
 function checkLogin() {
   const v=document.getElementById('login-input').value, e=document.getElementById('login-error');
   if(v===CLAVE){document.getElementById('login-screen').style.display='none';sessionStorage.setItem('joyeria_auth','1');cargarInventario();}
@@ -710,13 +678,9 @@ function checkLogin() {
 // ── FOTO ─────────────────────────────────────────────────
 window._fotoUrl = '';
 
-async function onFotoFile(e) {
+function onFotoFile(e) {
   const file = e.target.files[0];
   if (!file) return;
-
-  if (file.size > 5 * 1024 * 1024) { toast('La foto es muy grande. Máximo 5MB.', 'error'); return; }
-
-  // Mostrar preview inmediato
   const reader = new FileReader();
   reader.onload = ev => {
     const prev = document.getElementById('foto-preview');
@@ -726,152 +690,8 @@ async function onFotoFile(e) {
     document.getElementById('n-fotolink').value = '';
   };
   reader.readAsDataURL(file);
-
-  const uploadBtn = document.getElementById('foto-upload-status');
-  uploadBtn.style.display = 'block';
-  uploadBtn.style.color = 'var(--ink-soft)';
-
-  // Convertir a base64 una sola vez para ambos usos
-  const base64 = await fileToBase64(file);
-
-  // ── PASO 1: Analizar con Gemini IA ──────────────────────
-  uploadBtn.textContent = '✨ Analizando imagen con IA...';
-  try {
-    await analizarConGemini(base64, file.type);
-  } catch(err) {
-    console.log('Gemini error (no crítico):', err);
-  }
-
-  // ── PASO 2: Subir a Drive ────────────────────────────────
-  uploadBtn.textContent = '⏳ Subiendo foto a Drive...';
-  uploadBtn.style.color = 'var(--ink-soft)';
-  try {
-    const nombre = document.getElementById('n-nombre').value.trim() || 'joya';
-    const r = await apiPost({ action:'subirFoto', base64, mimeType:file.type, nombre:nombre.substring(0,30) });
-    if (r.ok) {
-      window._fotoUrl = r.url;
-      document.getElementById('n-fotolink').value = r.url;
-      uploadBtn.textContent = '✓ Foto guardada en Google Drive';
-      uploadBtn.style.color = 'var(--green)';
-    } else {
-      uploadBtn.textContent = '✗ Error al subir: ' + (r.msg || 'intenta de nuevo');
-      uploadBtn.style.color = 'var(--red)';
-    }
-  } catch(err) {
-    uploadBtn.textContent = '✗ Sin conexión al subir foto';
-    uploadBtn.style.color = 'var(--red)';
-  }
-}
-
-// ── GEMINI VISION ────────────────────────────────────────
-let _iaData = null; // guarda sugerencias para aceptar/rechazar
-
-async function analizarConGemini(base64, mimeType) {
-  const prompt = `Analiza esta imagen de una joya y responde SOLO en formato JSON válido, sin texto adicional ni backticks:
-{
-  "nombre": "descripción corta de la joya (ej: Anillo solitario con piedra central)",
-  "tipo": "uno de estos exactamente: Anillo, Collar, Pulsera, Pendientes, Broche, Otro",
-  "material": "material principal que puedas identificar (ej: Oro amarillo, Plata 925, Oro blanco, Metal dorado)",
-  "notas": "observaciones adicionales: estilo, acabado, piedras, características especiales. Si no puedes identificar algo con certeza, omítelo."
-}
-Sé conservador: si no puedes determinar algo con certeza, usa términos generales. No inventes detalles.`;
-
-  const body = {
-    contents: [{
-      parts: [
-        { inline_data: { mime_type: mimeType, data: base64 } },
-        { text: prompt }
-      ]
-    }],
-    generationConfig: { temperature: 0.1, maxOutputTokens: 300 }
-  };
-
-  const res = await fetch(
-    'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + GEMINI_KEY,
-    { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) }
-  );
-
-  if (!res.ok) throw new Error('Gemini HTTP ' + res.status);
-
-  const data = await res.json();
-  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-
-  // Limpiar respuesta y parsear JSON
-  const clean = text.replace(/```json|```/g, '').trim();
-  let parsed;
-  try { parsed = JSON.parse(clean); } catch(e) { throw new Error('JSON inválido: ' + clean); }
-
-  _iaData = parsed;
-  mostrarSugerenciasIA(parsed);
-}
-
-function mostrarSugerenciasIA(d) {
-  const panel = document.getElementById('ia-panel');
-  const sug   = document.getElementById('ia-sugerencias');
-  const TIPOS = ['Anillo','Collar','Pulsera','Pendientes','Broche','Otro'];
-  const tipoValido = TIPOS.includes(d.tipo) ? d.tipo : 'Otro';
-
-  sug.innerHTML = `
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 16px;">
-      <div><span style="color:var(--ink-soft);font-size:11px;text-transform:uppercase;letter-spacing:.8px;">Nombre</span><br><strong>${d.nombre||'—'}</strong></div>
-      <div><span style="color:var(--ink-soft);font-size:11px;text-transform:uppercase;letter-spacing:.8px;">Tipo</span><br><strong>${tipoValido}</strong></div>
-      <div><span style="color:var(--ink-soft);font-size:11px;text-transform:uppercase;letter-spacing:.8px;">Material</span><br><strong>${d.material||'—'}</strong></div>
-      <div style="grid-column:1/-1;"><span style="color:var(--ink-soft);font-size:11px;text-transform:uppercase;letter-spacing:.8px;">Notas</span><br><strong>${d.notas||'—'}</strong></div>
-    </div>`;
-
-  panel.style.display = 'block';
-  panel.scrollIntoView({ behavior:'smooth', block:'nearest' });
-}
-
-function aceptarSugerencias() {
-  if (!_iaData) return;
-  const TIPOS = ['Anillo','Collar','Pulsera','Pendientes','Broche','Otro'];
-
-  // Llenar solo campos vacíos — no sobrescribir lo que el usuario ya escribió
-  const campos = [
-    { id:'n-nombre',   val:_iaData.nombre   },
-    { id:'n-material', val:_iaData.material },
-    { id:'n-notas',    val:_iaData.notas    },
-  ];
-  campos.forEach(c => {
-    const el = document.getElementById(c.id);
-    if (el && !el.value.trim() && c.val) {
-      el.value = c.val;
-      el.classList.add('field-ia');
-      setTimeout(() => el.classList.remove('field-ia'), 3000);
-    }
-  });
-
-  // Tipo — solo si el select está en el valor por defecto
-  if (_iaData.tipo && TIPOS.includes(_iaData.tipo)) {
-    const sel = document.getElementById('n-tipo');
-    if (sel && sel.value === 'Anillo') { // valor por defecto
-      sel.value = _iaData.tipo;
-      sugerirComision();
-    }
-  }
-
-  document.getElementById('ia-panel').style.display = 'none';
-  toast('Campos completados con sugerencias IA — revisa y ajusta lo que necesites');
-  _iaData = null;
-}
-
-function rechazarSugerencias() {
-  document.getElementById('ia-panel').style.display = 'none';
-  _iaData = null;
-}
-
-function fileToBase64(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      // Quitar el prefijo "data:image/jpeg;base64,"
-      const base64 = reader.result.split(',')[1];
-      resolve(base64);
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
+  window._fotoUrl = '';
+  toast('Vista previa cargada. Para guardar permanentemente, sube la foto a Google Drive y pega el link abajo.');
 }
 
 function onFotoLink() {
